@@ -1,0 +1,45 @@
+# Root-level generated files
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Frontend build artifacts
+frontend/dist/
+frontend/coverage/
+frontend/node_modules/
+
+# Backend storage
+backend/uploads/
+backend/*.db
+backend/*.sqlite
+backend/.pytest_cache/
+backend/.venv/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+.cache/

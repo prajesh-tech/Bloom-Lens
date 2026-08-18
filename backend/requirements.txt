@@ -1,0 +1,41 @@
+# Web & API
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+
+# Database
+sqlalchemy>=2.0.28
+alembic>=1.13.1
+pymysql>=1.1.0
+asyncmy>=0.2.9
+aiosqlite>=0.20.0
+
+# Document Intelligence & OCR
+pymupdf>=1.23.22
+python-docx>=1.1.0
+paddleocr>=2.7.3
+paddlepaddle>=2.6.2
+opencv-python-headless>=4.9.0.80
+
+# AI / NLP & Vector Search
+transformers>=4.38.0
+sentence-transformers>=2.5.1
+faiss-cpu>=1.8.0
+google-genai>=0.1.0
+
+# Data Analysis
+numpy>=1.26.4
+pandas>=2.2.1
+scikit-learn>=1.4.1
+
+# HTTP & Multipart Parsing
+python-multipart>=0.0.9
+httpx>=0.27.0
+
+# Utilities & Configuration
+python-dotenv>=1.0.1
+
+# Testing & Quality Assurance
+pytest>=8.0.2
+pytest-asyncio>=0.23.5
