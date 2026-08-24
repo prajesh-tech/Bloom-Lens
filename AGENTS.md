@@ -26,3 +26,12 @@ This repository contains the BloomLens application:
 ## Notes
 - Keep secrets out of source control; use `.env` files locally only.
 - Do not claim production readiness without verification evidence for security and build quality.
+
+## Documentation References
+For more detailed information, consult the project documentation:
+- **Contribution Guide**: [`user_contributions.md`](file:///home/Prajesh/sp/user_contributions.md) (onboarding, setup, style rules)
+- **System Design & Architecture**: [`design.md`](file:///home/Prajesh/sp/design.md) (system diagrams, pipeline flows)
+- **Technical Specification**: [`spec/spec.md`](file:///home/Prajesh/sp/spec/spec.md) (API contract, models)
+- **Roadmap & Plan**: [`spec/plan.md`](file:///home/Prajesh/sp/spec/plan.md) (milestones, V1/V2 scope boundaries)
+- **Tasks & Backlog**: [`spec/tasks.md`](file:///home/Prajesh/sp/spec/tasks.md) (task management and maintenance checks)
+- **Skills Matrix**: [`spec/skills.md`](file:///home/Prajesh/sp/spec/skills.md) (competency matrix and developer guidelines)

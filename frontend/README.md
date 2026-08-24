@@ -270,6 +270,19 @@ npm run lint
 
 ---
 
+---
+
+## Documentation & Contribution Reference
+
+For guides on how to setup, run, and modify this project:
+- **System Design & Architecture**: [`design.md`](file:///home/Prajesh/sp/design.md)
+- **Developer Contribution Guide**: [`user_contributions.md`](file:///home/Prajesh/sp/user_contributions.md)
+- **Technical Specification**: [`spec/spec.md`](file:///home/Prajesh/sp/spec/spec.md)
+- **Operational Tasks & Roadmap**: [`spec/plan.md`](file:///home/Prajesh/sp/spec/plan.md) and [`spec/tasks.md`](file:///home/Prajesh/sp/spec/tasks.md)
+- **Skills Matrix**: [`spec/skills.md`](file:///home/Prajesh/sp/spec/skills.md)
+
+---
+
 ## License
 
 MIT License &copy; 2026 BloomLens Team.

@@ -203,3 +203,15 @@ The architecture cleanly supports future V2 extensions without restructuring V1 
 - **Course Outcomes (COs)**: Adding `course_outcomes` and `question_course_outcomes` tables.
 - **CO-PO Attainment Matrices**: Linking Bloom levels to program outcomes.
 - **Student Performance Analytics**: Student response modeling.
+
+---
+
+## 11. Documentation & Design Reference
+
+For guides on how to setup, run, and modify this project:
+- **System Design & Architecture**: [`design.md`](file:///home/Prajesh/sp/design.md) (comprehensive system-wide architecture and design patterns)
+- **Developer Contribution Guide**: [`user_contributions.md`](file:///home/Prajesh/sp/user_contributions.md) (setup, workflows, and PR standards)
+- **Technical Specification**: [`spec/spec.md`](file:///home/Prajesh/sp/spec/spec.md)
+- **Roadmap & Plan**: [`spec/plan.md`](file:///home/Prajesh/sp/spec/plan.md)
+- **Tasks & Backlog**: [`spec/tasks.md`](file:///home/Prajesh/sp/spec/tasks.md)
+- **Skills Matrix**: [`spec/skills.md`](file:///home/Prajesh/sp/spec/skills.md)
