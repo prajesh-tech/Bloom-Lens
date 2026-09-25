@@ -10,19 +10,24 @@ The status of the core deliverables in the current release is tracked below:
 
 | Feature / Task | Component | Status |
 | --- | --- | --- |
-| Database Model & Schema definitions (SQLAlchemy 2.x) | Backend | `[x] Completed` |
+| Database Model & Schema definitions (SQLAlchemy 2.x Async) | Backend | `[x] Completed` |
 | PyMuPDF and DOCX text parser helper logic | Backend | `[x] Completed` |
-| PaddleOCR scanning fallback engine | Backend | `[x] Completed` |
+| PaddleOCR scanning fallback engine with thread-safe lazy loading | Backend | `[x] Completed` |
 | 5-Stage Hybrid Bloom's Taxonomy Classifier | Backend | `[x] Completed` |
-| Gemini API edge-case verification fallback | Backend | `[x] Completed` |
-| FAISS CPU vector similarity calculation engine | Backend | `[x] Completed` |
-| REST API endpoints (`/api/v1`) implementation | Backend | `[x] Completed` |
+| Gemini API edge-case verification fallback with 10s timeout | Backend | `[x] Completed` |
+| FAISS CPU vector similarity pre-built calculation engine | Backend | `[x] Completed` |
+| REST API endpoints (`/api/v1`) with API Key authentication | Backend | `[x] Completed` |
+| Database transaction hardening (no auto-commit in `get_db`) | Backend | `[x] Completed` |
+| Failed upload file disk cleanup & transaction rollback | Backend | `[x] Completed` |
+| Single-query aggregated analytics (N+1 query optimization) | Backend | `[x] Completed` |
+| QuestionTopic unique constraint & duplicate link reconciliation | Backend | `[x] Completed` |
 | Vite + React configuration & TypeScript setup | Frontend | `[x] Completed` |
 | Drag & Drop file upload component | Frontend | `[x] Completed` |
 | Recharts Bloom distribution donut & bar charts | Frontend | `[x] Completed` |
 | Real-time search and Bloom badge pill filters | Frontend | `[x] Completed` |
 | Human-in-the-Loop sidebar review/override drawer | Frontend | `[x] Completed` |
-| Dual-Mode API Switch (Mock offline vs Live mode) | Frontend | `[x] Completed` |
+| Dual-Mode API Switch (Mock offline vs Live mode with API Key support) | Frontend | `[x] Completed` |
+| Multi-page full question pagination retrieval | Frontend | `[x] Completed` |
 
 ---
 
@@ -46,11 +51,10 @@ To keep the application stable, developers should regularly execute these action
   ```bash
   alembic history --verbose
   ```
-- Periodically back up the local database file `bloomlens.db` before applying new schema upgrades.
+- Back up database before applying new schema upgrades.
 
 ### Storage Optimization
-- Monitor size and storage utilization of the `backend/uploads/` directory to prevent disk space exhaustion from large question paper uploads.
-- Implement cleanup scripts to purge temporary mock files or test databases (`test_tmp.db`).
+- Monitor size and storage utilization of the `backend/uploads/` directory to prevent disk space exhaustion.
 
 ---
 
@@ -58,14 +62,14 @@ To keep the application stable, developers should regularly execute these action
 
 Before deploying a release build, the following quality checks must run successfully:
 
-1. **Verify Backend Tests**:
+1. **Verify Backend Tests** (35 tests):
    ```bash
    cd backend
    pytest tests/ -v
    ```
-   *Ensure all mocks and FAISS matching test assertions pass.*
+   *Ensures all document extractions, Bloom classification, authentication, transactions, cleanup, and similarity matching tests pass.*
 
-2. **Verify Frontend Quality Controls**:
+2. **Verify Frontend Quality Controls** (12 tests):
    ```bash
    cd frontend
    npm run type-check   # Validate TypeScript types
@@ -78,4 +82,4 @@ Before deploying a release build, the following quality checks must run successf
    cd frontend
    npm run build
    ```
-   *Ensure that the compiled bundle resolves successfully without warning outputs.*
+   *Ensure that the compiled bundle resolves successfully without errors.*

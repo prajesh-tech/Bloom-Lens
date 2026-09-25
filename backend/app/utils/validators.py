@@ -34,6 +34,17 @@ def validate_paper_upload(
     if maximum_marks <= 0:
         raise_api_error(status.HTTP_400_BAD_REQUEST, "InvalidMaximumMarks", "Maximum marks must be greater than 0.")
 
+    if not examination_type or not examination_type.strip():
+        raise_api_error(status.HTTP_400_BAD_REQUEST, "InvalidExamType", "Examination type cannot be empty.")
+
+    normalized_exam_type = examination_type.strip()
+    if normalized_exam_type not in SUPPORTED_EXAM_TYPES:
+        raise_api_error(
+            status.HTTP_400_BAD_REQUEST,
+            "UnsupportedExamType",
+            f"Unsupported examination type '{normalized_exam_type}'. Supported types: {', '.join(SUPPORTED_EXAM_TYPES)}",
+        )
+
     if not file.filename:
         raise_api_error(status.HTTP_400_BAD_REQUEST, "EmptyFilename", "Filename cannot be empty.")
 
@@ -110,13 +121,21 @@ async def read_and_validate_upload(file: UploadFile, maximum_marks: float, exami
 
 
 def safe_filename(filename: str) -> str:
-    """Returns a basename-only, filesystem-safe upload filename."""
+    """Returns a basename-only, filesystem-safe upload filename while preserving extension."""
     basename = os.path.basename(filename).strip().replace("\x00", "")
-    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", basename)
-    cleaned = cleaned.strip("._")
-    if not cleaned:
+    root, ext = os.path.splitext(basename)
+    cleaned_root = re.sub(r"[^A-Za-z0-9._-]+", "_", root).strip("._")
+    cleaned_ext = re.sub(r"[^A-Za-z0-9.]+", "", ext).strip()
+
+    if not cleaned_root and not cleaned_ext:
         raise_api_error(status.HTTP_400_BAD_REQUEST, "EmptyFilename", "Filename cannot be empty.")
-    return cleaned[:180]
+
+    if not cleaned_root:
+        cleaned_root = "upload"
+
+    max_root_len = max(1, 180 - len(cleaned_ext))
+    cleaned_root = cleaned_root[:max_root_len]
+    return f"{cleaned_root}{cleaned_ext}"
 
 
 def safe_upload_path(upload_dir: str, filename: str) -> str:

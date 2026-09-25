@@ -5,7 +5,7 @@ import { BloomAnalyticsData, TrendsAnalyticsData, OverviewAnalytics } from '../t
 import { simulateMockLatency } from '../utils/latency';
 import { MOCK_PAPERS, MOCK_QUESTIONS_MAP, MOCK_BLOOM_ANALYTICS, MOCK_TRENDS_ANALYTICS, MOCK_OVERVIEW_ANALYTICS } from './mockData';
 
-const isMock = () => import.meta.env.VITE_USE_MOCK_API !== 'false';
+const isMock = () => import.meta.env.VITE_USE_MOCK_API === 'true';
 
 export const analysisApi = {
   async uploadQuestionPaper(payload: PaperUploadPayload): Promise<QuestionPaper> {
@@ -79,10 +79,29 @@ export const analysisApi = {
       return MOCK_QUESTIONS_MAP[paperId] || MOCK_QUESTIONS_MAP[101];
     }
 
-    const { data } = await apiClient.get<{ items: QuestionAnalysis[] }>(`/questions`, {
-      params: { paper: paperId, limit: 100 },
-    });
-    return data.items || [];
+    let page = 1;
+    const limit = 100;
+    const allQuestions: QuestionAnalysis[] = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data } = await apiClient.get<{ items: QuestionAnalysis[]; total: number; page: number; limit: number }>(
+        `/questions`,
+        {
+          params: { paper: paperId, page, limit },
+        }
+      );
+      const items = data.items || [];
+      allQuestions.push(...items);
+
+      if (items.length === 0 || allQuestions.length >= data.total || items.length < limit) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+
+    return allQuestions;
   },
 
   async patchQuestion(questionId: number, payload: QuestionPatchPayload): Promise<QuestionAnalysis> {

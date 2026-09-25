@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # External AI Services
     GEMINI_API_KEY: Optional[str] = ""
 
+    # Authentication & Security
+    API_KEY: Optional[str] = None
+    AUTH_ENABLED: bool = False
+
     # File Storage Settings
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 20
@@ -60,6 +64,10 @@ class Settings(BaseSettings):
         key_missing = not self.GEMINI_API_KEY or self.GEMINI_API_KEY == "your_gemini_api_key_here"
         if env in {"production", "staging"} and key_missing:
             missing.append("GEMINI_API_KEY")
+
+        if env in {"production", "staging"} and self.AUTH_ENABLED:
+            if not self.API_KEY or self.API_KEY.strip() == "":
+                missing.append("API_KEY")
 
         if not self.cors_origins:
             missing.append("FRONTEND_ORIGINS")

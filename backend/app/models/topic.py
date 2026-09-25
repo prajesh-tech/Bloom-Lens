@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
-from sqlalchemy import String, Text, DateTime, ForeignKey, Integer, Float, Boolean
+from sqlalchemy import String, Text, DateTime, ForeignKey, Integer, Float, Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -33,6 +33,9 @@ class Topic(Base):
 
 class QuestionTopic(Base):
     __tablename__ = "question_topics"
+    __table_args__ = (
+        UniqueConstraint("question_id", "topic_id", name="uq_question_topic"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     question_id: Mapped[int] = mapped_column(

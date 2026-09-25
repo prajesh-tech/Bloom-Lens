@@ -124,12 +124,15 @@ Configure environment variables in `.env`:
 # Base URL of the BloomLens FastAPI backend
 VITE_API_BASE_URL=http://localhost:8000
 
+# Optional API key for authenticated backend endpoints (must match backend API_KEY)
+VITE_API_KEY=bloomlens-dev-secret-key-change-in-production
+
 # Controls whether mock API mode with simulated network latency (1.5s-2.5s) is active
 # Set to 'true' for standalone demo mode or 'false' for real backend API connection
 VITE_USE_MOCK_API=true
 ```
 
-> **Note**: Variables prefixed with `VITE_` are bundled into client-side code during build and must never contain backend secrets or API keys.
+> **Note**: Variables prefixed with `VITE_` are bundled into client-side code during build. For production deployments with authentication enabled, set `VITE_API_KEY` to the authorized client API key.
 
 ---
 

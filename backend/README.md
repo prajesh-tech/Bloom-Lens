@@ -12,9 +12,11 @@ BloomLens is an AI-powered historical question-paper analysis system designed fo
 - **Hierarchical Question Segmentation**: Detects main questions (`Q1`, `Q2`) and sub-questions (`Q1(a)`, `Q1(b)`), preserving parent-child relationships.
 - **Marks & Paper Validation**: Extracts question marks, detects optional question structures (`Answer 4 out of 5`), and validates paper maximum marks against extracted sums.
 - **Hybrid Bloom Classifier**: 5-stage classifier based on Revised Bloom's Taxonomy (L1 Remember to L6 Create) combining verb analysis, cognitive operation hierarchy, SentenceTransformers semantic similarity, structure analysis, weighted scoring, and Google Gemini LLM fallback verification (`google-genai`).
+- **Thread-Safe Model Loading**: Thread-safe lazy initialization using `threading.Lock` and double-checked locking for ML/OCR models.
+- **API Authentication & Role-Based Access**: FastAPI dependency-based authentication via `X-API-Key` or `Authorization: Bearer <token>` protecting write operations, human overrides, and analytics endpoints.
 - **Explainable AI Metadata**: Detailed component scores, detected verbs, cognitive operations, and confidence scores saved for every question.
 - **Similarity & Vector Search**: FAISS CPU vector index and text normalization to detect exact duplicate questions and semantically similar questions across historical years.
-- **Analytics Engine**: Question-count Bloom distribution, marks-weighted Bloom distribution, topic frequency, historical cognitive trends, and question type breakdown.
+- **Optimized Analytics Engine**: Single-query aggregated analytics for Question-Count Bloom distribution, marks-weighted Bloom distribution, topic frequency, historical cognitive trends, and question type breakdown without N+1 query overhead.
 - **Human-in-the-Loop Review**: Override question text, marks, topic, unit, Bloom level, and question type while preserving original AI predictions for research evaluation.
 - **REST APIs & OpenAPI**: Versioned `/api/v1/` endpoints ready for React frontend integration.
 
@@ -36,10 +38,16 @@ BloomLens is an AI-powered historical question-paper analysis system designed fo
 backend/
 ├── app/
 │   ├── main.py                     # FastAPI application entrypoint
-│   ├── core/                       # Config, database & logging
+│   ├── core/                       # Config, database, auth & logging
+│   │   ├── auth.py                 # API authentication & authorization
+│   │   ├── config.py               # Pydantic BaseSettings
+│   │   ├── database.py             # SQLAlchemy async engine & get_db
+│   │   ├── errors.py               # Structured error handling
+│   │   ├── logging.py              # Application logger
+│   │   └── metrics.py              # Request & processing metrics
 │   ├── api/routes/                 # Versioned REST API endpoints (/api/v1/)
-│   │   ├── health.py               # System health check
-│   │   ├── papers.py               # Paper upload, processing & status
+│   │   ├── health.py               # System & deep health check
+│   │   ├── papers.py               # Paper upload, processing, status & deletion
 │   │   ├── questions.py            # Search, filter, pagination & human review
 │   │   └── analytics.py            # Overview, Bloom metrics, topics & trends
 │   ├── models/                     # SQLAlchemy 2.x database models
@@ -49,8 +57,9 @@ backend/
 │   │   ├── question_extraction_service.py # Parsing & paper validation
 │   │   ├── bloom_service.py        # Hybrid Bloom classifier & Gemini fallback
 │   │   ├── similarity_service.py   # FAISS vector similarity engine
-│   │   └── analytics_service.py    # Analytics aggregations
-│   └── utils/                      # Text cleaning & validation helpers
+│   │   ├── topic_service.py        # Domain topic & unit classifier
+│   │   └── analytics_service.py    # Aggregated analytics engine
+│   └── utils/                      # Text cleaning & upload validation helpers
 ├── alembic/                        # Alembic migrations & initial seed data
 ├── tests/                          # Automated Pytest test suite
 ├── uploads/                        # Stored question paper files
@@ -93,6 +102,9 @@ DATABASE_URL=sqlite+aiosqlite:///./bloomlens.db
 # For MySQL 8: mysql+pymysql://user:password@localhost:3306/bloomlens
 
 GEMINI_API_KEY=your_google_gemini_api_key
+API_KEY=your_bloomlens_api_key_here
+AUTH_ENABLED=true
+
 UPLOAD_DIR=uploads
 BLOOM_VERIFICATION_THRESHOLD=0.80
 ```
@@ -125,7 +137,12 @@ Access Interactive API Documentation:
 Execute the automated test suite:
 
 ```bash
+# Activate your virtual environment first
+source .venv/bin/activate
 pytest tests/ -v
+
+# Or run directly via the virtualenv binary:
+.venv/bin/pytest tests/ -v
 ```
 
 The test suite covers:
@@ -135,6 +152,10 @@ The test suite covers:
 - FAISS duplicate question similarity search
 - Count-based and marks-weighted analytics metrics
 - REST API upload, search, pagination, and human override endpoints
+- Authentication enforcement (401 on unauthenticated access to write/analytics routes)
+- Transaction rollbacks and orphaned file cleanups on processing failure
+- Thread-safe lazy model initialization under concurrency
+- Gemini API timeout handling and graceful fallback
 
 ---
 
@@ -148,6 +169,7 @@ The test suite covers:
 - Question-count and marks-weighted Bloom distributions
 - Historical cognitive level trends
 - Human-in-the-loop overrides & review workflows
+- API key authentication & secure role-based authorization hook
 
 ### Strictly Excluded (Reserved for V2)
 - Course Outcomes (COs)

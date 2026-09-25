@@ -1,5 +1,7 @@
+import concurrent.futures
 import json
 import re
+import threading
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 
@@ -69,27 +71,32 @@ BLOOM_ANCHOR_EXAMPLES = {
 
 # Pre-computed anchor vectors cache
 _anchor_vectors_cache: Optional[Dict[str, np.ndarray]] = None
+_anchor_vectors_lock = threading.Lock()
 
 
 def _get_anchor_vectors() -> Dict[str, np.ndarray]:
-    """Generates average anchor embedding vector per Bloom level (L1-L6)."""
+    """Generates average anchor embedding vector per Bloom level (L1-L6) with double-checked lock."""
     global _anchor_vectors_cache
     if _anchor_vectors_cache is not None:
         return _anchor_vectors_cache
 
-    cache = {}
-    for level, examples in BLOOM_ANCHOR_EXAMPLES.items():
-        vecs = EmbeddingService.get_embeddings_batch(examples)
-        valid_vecs = [v for v in vecs if v is not None]
-        if valid_vecs:
-            avg_vec = np.mean(valid_vecs, axis=0)
-            # Normalize vector
-            norm = np.linalg.norm(avg_vec)
-            if norm > 0:
-                avg_vec = avg_vec / norm
-            cache[level] = avg_vec
-    _anchor_vectors_cache = cache
-    return cache
+    with _anchor_vectors_lock:
+        if _anchor_vectors_cache is not None:
+            return _anchor_vectors_cache
+
+        cache = {}
+        for level, examples in BLOOM_ANCHOR_EXAMPLES.items():
+            vecs = EmbeddingService.get_embeddings_batch(examples)
+            valid_vecs = [v for v in vecs if v is not None]
+            if valid_vecs:
+                avg_vec = np.mean(valid_vecs, axis=0)
+                # Normalize vector
+                norm = np.linalg.norm(avg_vec)
+                if norm > 0:
+                    avg_vec = avg_vec / norm
+                cache[level] = avg_vec
+        _anchor_vectors_cache = cache
+        return cache
 
 
 class BloomService:
@@ -305,10 +312,15 @@ Return ONLY a JSON object matching this structure:
         try:
             from google import genai
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
+
+            # Enforce 10-second timeout on synchronous Gemini API call to prevent worker thread exhaustion
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    client.models.generate_content,
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                )
+                response = future.result(timeout=10.0)
 
             if response and response.text:
                 json_str = response.text.strip()

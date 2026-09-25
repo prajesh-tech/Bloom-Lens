@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, Literal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.auth import get_current_user, AuthenticatedUser
 from app.services.analytics_service import AnalyticsService
 from app.schemas.analytics import (
     OverviewAnalyticsResponse,
@@ -12,7 +13,11 @@ from app.schemas.analytics import (
     TrendsAnalyticsResponse,
 )
 
-router = APIRouter(prefix="/analytics", tags=["Analytics"])
+router = APIRouter(
+    prefix="/analytics",
+    tags=["Analytics"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/overview", response_model=OverviewAnalyticsResponse)
@@ -53,7 +58,7 @@ async def get_question_analytics(
 
 @router.get("/trends", response_model=TrendsAnalyticsResponse)
 async def get_trends_analytics(
-    metric_type: str = Query("marks_weighted", description="Metric type: 'count' or 'marks_weighted'"),
+    metric_type: Literal["count", "marks_weighted"] = Query("marks_weighted", description="Metric type: 'count' or 'marks_weighted'"),
     subject_id: Optional[int] = Query(None, description="Optional subject ID filter"),
     db: AsyncSession = Depends(get_db),
 ):

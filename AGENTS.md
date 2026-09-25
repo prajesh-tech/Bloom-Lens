@@ -2,30 +2,32 @@
 
 ## Project overview
 This repository contains the BloomLens application:
-- backend: FastAPI service with SQLAlchemy, AI document processing, and analytics
+- backend: FastAPI service with SQLAlchemy 2.0 Async, AI document processing, FAISS vector search, and analytics
 - frontend: Vite + React + TypeScript UI
 
 ## Working conventions
-- Keep backend changes aligned with the FastAPI settings/config patterns.
+- Keep backend changes aligned with FastAPI settings/config patterns and dependency-based auth (`app/core/auth.py`).
+- Maintain clean transaction lifecycles: `get_db()` yields sessions and rolls back on exceptions without auto-committing; write routes explicitly commit.
+- Protect module-level lazy singletons with `threading.Lock` and double-checked initialization.
 - Keep frontend changes aligned with the existing React Query and error-handling structure.
 - Prefer small, targeted changes over broad rewrites.
 - When working on security or config, validate environment variables before merging.
 - Do not silently suppress audit or test failures.
 
 ## Verification expectations
-- Backend: prefer focused tests that cover the modified behavior.
-- Frontend: run the relevant type-check/test/build commands before closing a task.
+- Backend: run full pytest suite (`.venv/bin/pytest tests/ -v`).
+- Frontend: run type-check (`npm run type-check`), tests (`npm run test`), and build (`npm run build`) before closing a task.
 - If a sandbox or environment issue prevents a command from running, document that clearly and cite the exact command/output.
 
 ## Commands
-- Backend tests: `cd backend && pytest tests/ -q`
+- Backend tests: `cd backend && pytest tests/ -v`
 - Frontend type-check: `cd frontend && npm run type-check`
 - Frontend tests: `cd frontend && npm run test`
 - Frontend build: `cd frontend && npm run build`
 
 ## Notes
 - Keep secrets out of source control; use `.env` files locally only.
-- Do not claim production readiness without verification evidence for security and build quality.
+- Do not claim production readiness without verification evidence for security, transactions, and build quality.
 
 ## Documentation References
 For more detailed information, consult the project documentation:

@@ -146,6 +146,9 @@ class AnalyticsService:
         Computes historical Bloom level trends across question papers over time.
         Metric type: "count" or "marks_weighted".
         """
+        if metric_type not in ("count", "marks_weighted"):
+            raise ValueError(f"Invalid metric_type '{metric_type}'. Must be 'count' or 'marks_weighted'.")
+
         papers_query = select(QuestionPaper).order_by(QuestionPaper.upload_timestamp.asc())
         if subject_id:
             papers_query = papers_query.where(QuestionPaper.subject_id == subject_id)
@@ -156,16 +159,29 @@ class AnalyticsService:
         bloom_levels_res = await db.execute(select(BloomLevel))
         bloom_levels = {bl.id: bl.code for bl in bloom_levels_res.scalars().all()}
 
+        # Single aggregated query across matching papers to avoid N+1 queries
+        paper_ids = [p.id for p in papers]
+        paper_rows_map: Dict[int, List[Any]] = {p.id: [] for p in papers}
+
+        if paper_ids:
+            q_query = (
+                select(
+                    Question.question_paper_id,
+                    Question.effective_bloom_level_id,
+                    func.count(Question.id).label("q_count"),
+                    func.coalesce(func.sum(Question.marks), 0.0).label("m_sum"),
+                )
+                .where(Question.question_paper_id.in_(paper_ids))
+                .group_by(Question.question_paper_id, Question.effective_bloom_level_id)
+            )
+            q_rows = (await db.execute(q_query)).all()
+            for r in q_rows:
+                paper_rows_map[r.question_paper_id].append(r)
+
         trends: List[HistoricalTrendItem] = []
 
         for p in papers:
-            q_query = select(
-                Question.effective_bloom_level_id,
-                func.count(Question.id).label("q_count"),
-                func.coalesce(func.sum(Question.marks), 0.0).label("m_sum"),
-            ).where(Question.question_paper_id == p.id).group_by(Question.effective_bloom_level_id)
-
-            q_rows = (await db.execute(q_query)).all()
+            q_rows = paper_rows_map.get(p.id, [])
 
             trend_vals = {"L1": 0.0, "L2": 0.0, "L3": 0.0, "L4": 0.0, "L5": 0.0, "L6": 0.0}
 

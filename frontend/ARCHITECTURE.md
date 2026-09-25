@@ -155,45 +155,48 @@ Store Primary Bloom Level (L1-L6), Confidence, and Explainability JSON
 ---
 
 ## 7. API Architecture
-
+ 
 All endpoints reside under `/api/v1/`:
 
-| Method | Endpoint | Description |
-| ------ | -------- | ----------- |
-| `GET` | `/api/v1/health` | Health check & DB status |
-| `POST` | `/api/v1/papers/upload` | Upload & analyze paper |
-| `GET` | `/api/v1/papers` | Paginated paper history list |
-| `GET` | `/api/v1/papers/{id}` | Get paper details |
-| `GET` | `/api/v1/papers/{id}/status` | Poll paper processing status |
-| `GET` | `/api/v1/questions` | Search, filter & paginate questions |
-| `GET` | `/api/v1/questions/{id}` | Single question detail & sub-questions |
-| `PATCH` | `/api/v1/questions/{id}` | Human review & classification override |
-| `GET` | `/api/v1/analytics/overview` | Macro overview statistics |
-| `GET` | `/api/v1/analytics/bloom` | Question-count & marks-weighted Bloom distributions |
-| `GET` | `/api/v1/analytics/topics` | Topic frequency analytics |
-| `GET` | `/api/v1/analytics/trends` | Historical cognitive Bloom level trends |
+| Method | Endpoint | Description | Auth Required |
+| ------ | -------- | ----------- | ------------- |
+| `GET` | `/api/v1/health` | Health check & DB status | No |
+| `GET` | `/api/v1/health/deep` | Deep subsystem health check | No |
+| `POST` | `/api/v1/papers/upload` | Upload & analyze paper | Yes |
+| `GET` | `/api/v1/papers` | Paginated paper history list | No |
+| `GET` | `/api/v1/papers/{id}` | Get paper details | No |
+| `GET` | `/api/v1/papers/{id}/status` | Poll paper processing status | No |
+| `DELETE` | `/api/v1/papers/{id}` | Delete paper and cascade questions | Yes |
+| `GET` | `/api/v1/questions` | Search, filter & paginate questions | No |
+| `GET` | `/api/v1/questions/{id}` | Single question detail & sub-questions | No |
+| `PATCH` | `/api/v1/questions/{id}` | Human review & classification override | Yes |
+| `GET` | `/api/v1/analytics/overview` | Macro overview statistics | Yes |
+| `GET` | `/api/v1/analytics/bloom` | Question-count & marks-weighted Bloom distributions | Yes |
+| `GET` | `/api/v1/analytics/topics` | Topic frequency analytics | Yes |
+| `GET` | `/api/v1/analytics/trends` | Historical cognitive Bloom level trends | Yes |
 
 ---
 
 ## 8. Data Models
 
-### Database Entities (SQLAlchemy 2.x)
-- `users`: User accounts & roles.
+### Database Entities (SQLAlchemy)
 - `subjects`: Academic subjects/courses.
 - `question_papers`: Upload metadata, exam type, maximum marks, processing status, validation metadata.
 - `bloom_levels`: Seeded L1 (Remember) to L6 (Create) levels with keywords.
 - `questions`: Main/sub-question self-referential hierarchy, original/normalized text, marks, AI vs Human vs Effective Bloom level, AI analysis explainability JSON.
-- `topics` & `question_topics`: Topic classification.
+- `topics` & `question_topics`: Topic classification with unique question-topic constraints.
 - `question_similarities`: Exact and semantic repeat tracking.
 
 ---
 
 ## 9. Security Architecture
 
-- **No Secrets in Client**: Client-side environment variables (`VITE_*`) contain public configuration only.
-- **Backend Isolation**: Gemini API keys and database credentials reside exclusively in backend environment variables.
-- **Input Sanitization**: File type validation, maximum upload size constraints, and SQL parameterization via SQLAlchemy async ORM.
-- **Safe Error Responses**: Production error handling returns sanitized JSON without stack traces or internal filesystem paths.
+- **API Authentication**: Sensitive endpoints (paper upload/deletion, question override PATCH, and analytics routes) are protected via FastAPI dependency authentication using `X-API-Key` or `Authorization: Bearer <token>` verified with constant-time comparison (`secrets.compare_digest`).
+- **Transactional Integrity**: Database sessions yield without auto-committing, guaranteeing automatic rollback on exceptions. Write routes commit explicitly, while read routes execute without write transactions. Failed file uploads clean up orphaned files from disk.
+- **Thread-Safe AI Engines**: Lazy-initialized ML/NLP services (OCR engine, embedding transformer, anchor vectors) use thread-safe double-checked locking to prevent race conditions during concurrent request processing.
+- **Backend Isolation**: Gemini API keys, API authentication tokens, and database credentials reside exclusively in backend environment variables.
+- **Input Sanitization**: File type validation, maximum upload size constraints, supported exam types validation, and SQL parameterization via SQLAlchemy ORM.
+- **Safe Error Responses**: Health check endpoints and API error handlers return sanitized JSON without exposing raw database connection exceptions or internal filesystem paths.
 
 ---
 

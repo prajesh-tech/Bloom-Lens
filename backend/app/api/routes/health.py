@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.logging import logger
 from app.core.metrics import metrics
 from app.services.embedding_service import get_embedding_backend_status
 
@@ -27,7 +28,8 @@ async def deep_health_check(db: AsyncSession = Depends(get_db)):
     try:
         await db.execute(text("SELECT 1"))
     except Exception as e:
-        db_status = f"unhealthy: {str(e)}"
+        logger.error(f"Deep health check database connectivity failed: {e}")
+        db_status = "unhealthy"
 
     return {
         "status": "online",

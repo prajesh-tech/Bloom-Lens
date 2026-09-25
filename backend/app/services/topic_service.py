@@ -1,6 +1,27 @@
 import re
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict
 from app.core.logging import logger
+
+# Knowledge domain topic mapping dictionary (Computer Science domain focused for V1)
+TOPIC_RULES: Dict[str, Dict[str, List[str]]] = {
+    "Database Systems": {
+        "Normalization & Normal Forms": ["normalization", "1nf", "2nf", "3nf", "bcnf", "4nf", "functional dependency"],
+        "Transaction Management": ["acid", "transaction", "concurrency", "commit", "rollback", "isolation", "deadlock"],
+        "Indexing & Hashing": ["b-tree", "b+ tree", "indexing", "hashing", "primary key", "foreign key"],
+        "Relational Algebra & SQL": ["sql", "join", "select", "group by", "relational algebra", "query"],
+    },
+    "Data Structures": {
+        "Trees & Binary Search Trees": ["binary tree", "bst", "avl", "red-black tree", "tree traversal", "inorder", "preorder"],
+        "Graphs & Graph Algorithms": ["graph", "bfs", "dfs", "dijkstra", "shortest path", "spanning tree", "kruskal", "prim"],
+        "Sorting & Searching": ["quicksort", "mergesort", "heapsort", "binary search", "hashing", "sorting"],
+        "Stacks & Queues": ["stack", "queue", "push", "pop", "enqueue", "dequeue", "priority queue"],
+    },
+    "General Computer Science": {
+        "Software Design & Architecture": ["design pattern", "architecture", "solid", "coupling", "cohesion", "uml"],
+        "Operating Systems": ["process", "thread", "scheduling", "paging", "virtual memory", "deadlock", "mutex"],
+        "Computer Networks": ["tcp/ip", "osi model", "ip address", "routing", "http", "socket", "dns"],
+    },
+}
 
 
 class TopicService:
@@ -38,32 +59,11 @@ class TopicService:
 
         text_lower = text.lower()
 
-        # Knowledge domain topic mapping dictionary
-        topic_rules = {
-            "Database Systems": {
-                "Normalization & Normal Forms": ["normalization", "1nf", "2nf", "3nf", "bcnf", "4nf", "functional dependency"],
-                "Transaction Management": ["acid", "transaction", "concurrency", "commit", "rollback", "isolation", "deadlock"],
-                "Indexing & Hashing": ["b-tree", "b+ tree", "indexing", "hashing", "primary key", "foreign key"],
-                "Relational Algebra & SQL": ["sql", "join", "select", "group by", "relational algebra", "query"],
-            },
-            "Data Structures": {
-                "Trees & Binary Search Trees": ["binary tree", "bst", "avl", "red-black tree", "tree traversal", "inorder", "preorder"],
-                "Graphs & Graph Algorithms": ["graph", "bfs", "dfs", "dijkstra", "shortest path", "spanning tree", "kruskal", "prim"],
-                "Sorting & Searching": ["quicksort", "mergesort", "heapsort", "binary search", "hashing", "sorting"],
-                "Stacks & Queues": ["stack", "queue", "push", "pop", "enqueue", "dequeue", "priority queue"],
-            },
-            "General Computer Science": {
-                "Software Design & Architecture": ["design pattern", "architecture", "solid", "coupling", "cohesion", "uml"],
-                "Operating Systems": ["process", "thread", "scheduling", "paging", "virtual memory", "deadlock", "mutex"],
-                "Computer Networks": ["tcp/ip", "osi model", "ip address", "routing", "http", "socket", "dns"],
-            }
-        }
-
         # Check matched subject or search across all rules
         domains_to_check = []
-        if subject_name and subject_name in topic_rules:
-            domains_to_check.append(topic_rules[subject_name])
-        for domain in topic_rules.values():
+        if subject_name and subject_name in TOPIC_RULES:
+            domains_to_check.append(TOPIC_RULES[subject_name])
+        for domain in TOPIC_RULES.values():
             if domain not in domains_to_check:
                 domains_to_check.append(domain)
 

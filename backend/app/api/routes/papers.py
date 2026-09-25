@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.auth import get_current_user, AuthenticatedUser
 from app.core.logging import logger
 from app.models.question_paper import QuestionPaper
 from app.models.subject import Subject
@@ -43,6 +44,7 @@ async def upload_question_paper(
     year_date: Optional[str] = Form(None, description="Year or Date e.g. 2024"),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """Uploads, parses, and analyzes a PDF or DOCX question paper."""
     # 1. Validation
@@ -311,8 +313,12 @@ async def upload_question_paper(
 
     except Exception as e:
         logger.error(f"Failed processing question paper upload: {e}")
-        paper.processing_status = "FAILED"
-        await db.commit()
+        await db.rollback()
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as rm_err:
+                logger.warning(f"Failed to delete orphaned upload file {file_path}: {rm_err}")
         raise_api_error(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "PaperProcessingFailed",
@@ -416,7 +422,11 @@ async def get_paper_status(paper_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.delete("/{paper_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_question_paper(paper_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_question_paper(
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
     """Deletes a question paper and cascade-removes its questions, topics, similarities, and uploaded file."""
     stmt = select(QuestionPaper).where(QuestionPaper.id == paper_id)
     paper = (await db.execute(stmt)).scalar_one_or_none()

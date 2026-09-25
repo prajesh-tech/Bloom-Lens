@@ -1,3 +1,4 @@
+import threading
 from typing import Dict, Any, List
 import fitz  # PyMuPDF
 from app.core.config import settings
@@ -5,22 +6,26 @@ from app.core.logging import logger
 from app.utils.text_cleaner import clean_text
 
 _ocr_engine = None
+_ocr_lock = threading.Lock()
 
 
 def get_ocr_engine():
-    """Lazily initializes PaddleOCR engine to preserve startup speed."""
+    """Lazily initializes PaddleOCR engine to preserve startup speed with double-checked lock."""
     global _ocr_engine
-    if _ocr_engine is None:
-        try:
-            import warnings
-            from paddleocr import PaddleOCR
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)
-                _ocr_engine = PaddleOCR(use_angle_cls=True, lang=settings.OCR_LANG, show_log=False)
-            logger.info("PaddleOCR engine initialized successfully.")
-        except Exception as e:
-            logger.warning(f"PaddleOCR engine failed to initialize: {e}")
-            _ocr_engine = False
+    if _ocr_engine is not None:
+        return _ocr_engine if _ocr_engine is not False else None
+    with _ocr_lock:
+        if _ocr_engine is None:
+            try:
+                import warnings
+                from paddleocr import PaddleOCR
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=DeprecationWarning)
+                    _ocr_engine = PaddleOCR(use_angle_cls=True, lang=settings.OCR_LANG, show_log=False)
+                logger.info("PaddleOCR engine initialized successfully.")
+            except Exception as e:
+                logger.warning(f"PaddleOCR engine failed to initialize: {e}")
+                _ocr_engine = False
     return _ocr_engine if _ocr_engine is not False else None
 
 

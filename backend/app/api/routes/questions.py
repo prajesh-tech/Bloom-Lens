@@ -1,10 +1,11 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, func, distinct, or_, and_
+from sqlalchemy import select, func, distinct, or_, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
+from app.core.auth import get_current_user, AuthenticatedUser
 from app.models.question import Question
 from app.models.question_paper import QuestionPaper
 from app.models.subject import Subject
@@ -165,6 +166,7 @@ async def override_question(
     question_id: int,
     patch: QuestionPatchSchema,
     db: AsyncSession = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Human-in-the-Loop review and override endpoint.
@@ -224,7 +226,12 @@ async def override_question(
                 db.add(topic)
                 await db.flush()
 
-            # Remove existing primary topic association and reassign
+            # Remove existing topic associations for this question to prevent duplicate entries
+            delete_stmt = delete(QuestionTopic).where(QuestionTopic.question_id == q.id)
+            await db.execute(delete_stmt)
+            await db.flush()
+
+            # Insert the newly selected primary topic association
             db.add(QuestionTopic(question_id=q.id, topic_id=topic.id, confidence=1.0, is_primary=True))
             is_corrected = True
 
@@ -232,8 +239,8 @@ async def override_question(
         q.review_status = "CORRECTED"
 
     await db.commit()
-    await db.refresh(q)
+    db.expire_all()
 
-    # Re-query with loaded relations
+    # Re-query with loaded relations to return updated state including new topic
     updated_q = (await db.execute(stmt)).scalar_one()
     return _build_question_response(updated_q)

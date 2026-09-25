@@ -4,11 +4,17 @@ from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
+from app.core.config import settings
 from app.core.database import Base, get_db
 from app.models.bloom_level import BloomLevel
 from app.main import app
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_API_KEY = "test_secret_key_12345"
+
+# Set test environment config
+settings.API_KEY = TEST_API_KEY
+settings.AUTH_ENABLED = True
 
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestAsyncSessionLocal = async_sessionmaker(
@@ -49,6 +55,22 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture(scope="function")
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    async def _override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+        headers={"X-API-Key": TEST_API_KEY},
+    ) as ac:
+        yield ac
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def unauthed_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     async def _override_get_db():
         yield db_session
 

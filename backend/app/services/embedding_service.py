@@ -1,3 +1,4 @@
+import threading
 from typing import List, Optional
 import numpy as np
 from app.core.config import settings
@@ -5,29 +6,37 @@ from app.core.logging import logger
 
 _embedding_model = None
 _fallback_vectorizer = None
+_model_lock = threading.Lock()
+_vectorizer_lock = threading.Lock()
 
 
 def get_fallback_vectorizer():
     """Fallback n-gram HashingVectorizer when SentenceTransformers model is offline/unavailable."""
     global _fallback_vectorizer
-    if _fallback_vectorizer is None:
-        from sklearn.feature_extraction.text import HashingVectorizer
-        _fallback_vectorizer = HashingVectorizer(n_features=384, alternate_sign=False, norm="l2")
+    if _fallback_vectorizer is not None:
+        return _fallback_vectorizer
+    with _vectorizer_lock:
+        if _fallback_vectorizer is None:
+            from sklearn.feature_extraction.text import HashingVectorizer
+            _fallback_vectorizer = HashingVectorizer(n_features=384, alternate_sign=False, norm="l2")
     return _fallback_vectorizer
 
 
 def get_embedding_model():
-    """Lazily loads SentenceTransformer model to preserve boot performance."""
+    """Lazily loads SentenceTransformer model to preserve boot performance with double-checked lock."""
     global _embedding_model
-    if _embedding_model is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-            logger.info(f"Loading SentenceTransformer model: {settings.EMBEDDING_MODEL_NAME}...")
-            _embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
-            logger.info("SentenceTransformer model loaded successfully.")
-        except Exception as e:
-            logger.warning(f"Failed to load SentenceTransformer model ({settings.EMBEDDING_MODEL_NAME}): {e}")
-            _embedding_model = False
+    if _embedding_model is not None:
+        return _embedding_model if _embedding_model is not False else None
+    with _model_lock:
+        if _embedding_model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                logger.info(f"Loading SentenceTransformer model: {settings.EMBEDDING_MODEL_NAME}...")
+                _embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
+                logger.info("SentenceTransformer model loaded successfully.")
+            except Exception as e:
+                logger.warning(f"Failed to load SentenceTransformer model ({settings.EMBEDDING_MODEL_NAME}): {e}")
+                _embedding_model = False
     return _embedding_model if _embedding_model is not False else None
 
 
