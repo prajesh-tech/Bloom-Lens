@@ -31,7 +31,27 @@ The status of the core deliverables in the current release is tracked below:
 
 ---
 
-## 2. Recurring Maintenance Tasks
+## 2. V2 Course Outcomes & CO Analytics Backlog & Status
+
+The implementation status for the V2 Course Outcomes roadmap is tracked below:
+
+| Phase | Feature / Task | Component | Status |
+| --- | --- | --- | --- |
+| **Phase 0** | Discovery & Baseline Verification | Backend / Test | `[x] Completed` |
+| **Phase 1** | Domain Models & Migration (`Course`, `CourseOutcome`, `QuestionCourseOutcome`, Alembic) | Backend | `[x] Completed` |
+| **Phase 2** | Course & Course Outcome Management API (`CourseService`, schemas, CRUD routes) | Backend | `[x] Completed` |
+| **Phase 3** | CO Import Flow (Manual-first CO management, extraction preview & confirmation) | Backend | `[ ] Pending` |
+| **Phase 4** | Hybrid CO Mapping Service (Semantic + Concept + Bloom consistency + Gemini fallback) | Backend | `[ ] Pending` |
+| **Phase 5** | Question API & Human Review Extensions (CO mappings, review status, override audit) | Backend | `[ ] Pending` |
+| **Phase 6** | CO Analytics Engine (`co-distribution`, `co-bloom`, `co-trends`, `co-coverage`, `topic-co`) | Backend | `[ ] Pending` |
+| **Phase 7** | Configuration, Error Handling & Security (Pydantic settings, sanitization, validation) | Backend | `[ ] Pending` |
+| **Phase 8** | Comprehensive Test Suite (Models, services, mock fallbacks, analytics validation) | Backend / Test | `[ ] Pending` |
+| **Phase 9** | Documentation & Cleanliness Audit (`README.md`, `design.md`, `spec/*`) | Docs | `[ ] Pending` |
+
+
+---
+
+## 3. Recurring Maintenance Tasks
 
 To keep the application stable, developers should regularly execute these actions:
 
@@ -58,7 +78,7 @@ To keep the application stable, developers should regularly execute these action
 
 ---
 
-## 3. Pre-Release Verification Procedures
+## 4. Pre-Release Verification Procedures
 
 Before deploying a release build, the following quality checks must run successfully:
 

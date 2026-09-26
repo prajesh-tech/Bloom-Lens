@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.errors import http_exception_handler, validation_exception_handler, unhandled_exception_handler
 from app.core.logging import logger
 from app.core.metrics import metrics
-from app.api.routes import health, papers, questions, analytics
+from app.api.routes import health, papers, questions, analytics, courses, course_outcomes
 from app.services.embedding_service import get_embedding_model
 
 
@@ -75,6 +75,8 @@ app.include_router(health.router, prefix=api_v1_prefix)
 app.include_router(papers.router, prefix=api_v1_prefix)
 app.include_router(questions.router, prefix=api_v1_prefix)
 app.include_router(analytics.router, prefix=api_v1_prefix)
+app.include_router(courses.router, prefix=api_v1_prefix)
+app.include_router(course_outcomes.router, prefix=api_v1_prefix)
 
 
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
