@@ -365,3 +365,89 @@ class CourseService:
 
         logger.info(f"Replaced {len(new_outcomes)} outcomes for Course id={course_id}")
         return new_outcomes
+
+    @staticmethod
+    async def import_confirmed_outcomes(
+        db: AsyncSession,
+        course_id: int,
+        outcomes_data: List,
+        mode: str = "replace",
+    ) -> List[CourseOutcome]:
+        """
+        Saves confirmed imported outcomes.
+        mode='replace': Overwrites all existing outcomes.
+        mode='append': Merges outcomes (updates matching code, appends new ones).
+        """
+        course = await CourseService.get_course_by_id(db, course_id, include_outcomes=False)
+        if not course:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Course with ID {course_id} not found.",
+            )
+
+        # Check for duplicates in incoming payload
+        seen_codes = set()
+        for item in outcomes_data:
+            code_upper = item.code.strip().upper()
+            if code_upper in seen_codes:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Duplicate CourseOutcome code '{code_upper}' in request payload.",
+                )
+            seen_codes.add(code_upper)
+
+        if mode == "replace":
+            await db.execute(delete(CourseOutcome).where(CourseOutcome.course_id == course_id))
+            saved_outcomes = []
+            for idx, item in enumerate(outcomes_data):
+                sort_val = item.sort_order if item.sort_order != 0 else idx + 1
+                co = CourseOutcome(
+                    course_id=course_id,
+                    code=item.code.strip().upper(),
+                    description=item.description.strip(),
+                    sort_order=sort_val,
+                )
+                db.add(co)
+                saved_outcomes.append(co)
+            await db.commit()
+            for co in saved_outcomes:
+                await db.refresh(co)
+            return saved_outcomes
+
+        elif mode == "append":
+            # Fetch existing outcomes for this course
+            existing_stmt = select(CourseOutcome).where(CourseOutcome.course_id == course_id)
+            existing_cos = {co.code.upper(): co for co in (await db.execute(existing_stmt)).scalars().all()}
+            max_sort = max([co.sort_order for co in existing_cos.values()], default=0)
+
+            saved_outcomes = []
+            for item in outcomes_data:
+                code_upper = item.code.strip().upper()
+                if code_upper in existing_cos:
+                    existing_co = existing_cos[code_upper]
+                    existing_co.description = item.description.strip()
+                    if item.sort_order:
+                        existing_co.sort_order = item.sort_order
+                    saved_outcomes.append(existing_co)
+                else:
+                    max_sort += 1
+                    sort_val = item.sort_order if item.sort_order != 0 else max_sort
+                    new_co = CourseOutcome(
+                        course_id=course_id,
+                        code=code_upper,
+                        description=item.description.strip(),
+                        sort_order=sort_val,
+                    )
+                    db.add(new_co)
+                    saved_outcomes.append(new_co)
+
+            await db.commit()
+            for co in saved_outcomes:
+                await db.refresh(co)
+            return saved_outcomes
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid import mode '{mode}'. Must be 'replace' or 'append'.",
+            )
+

@@ -14,6 +14,12 @@ from app.schemas.course import (
     CourseOutcomeListResponse,
     CourseBulkOutcomeItem,
     CourseBulkOutcomeRequest,
+    COExtractTextRequest,
+    COExtractedItem,
+    COExtractionPreviewResponse,
+    COImportConfirmItem,
+    COImportConfirmRequest,
+    COImportConfirmResponse,
 )
 
 __all__ = [
@@ -30,4 +36,10 @@ __all__ = [
     "CourseOutcomeListResponse",
     "CourseBulkOutcomeItem",
     "CourseBulkOutcomeRequest",
+    "COExtractTextRequest",
+    "COExtractedItem",
+    "COExtractionPreviewResponse",
+    "COImportConfirmItem",
+    "COImportConfirmRequest",
+    "COImportConfirmResponse",
 ]

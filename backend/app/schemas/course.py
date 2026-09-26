@@ -135,3 +135,62 @@ class CourseBulkOutcomeItem(BaseModel):
 
 class CourseBulkOutcomeRequest(BaseModel):
     outcomes: List[CourseBulkOutcomeItem]
+
+
+class COExtractTextRequest(BaseModel):
+    text: str = Field(..., min_length=5, description="Raw syllabus or curriculum text containing Course Outcomes")
+
+
+class COExtractedItem(BaseModel):
+    code: str = Field(..., description="Normalized CO code e.g. CO1")
+    description: str = Field(..., description="Extracted outcome description")
+    sort_order: int = Field(0, description="Inferred sequence order")
+    confidence: float = Field(1.0, ge=0.0, le=1.0, description="Extraction confidence score")
+    suggested_bloom_level: Optional[str] = Field(None, description="Suggested Bloom level code e.g. L2, L3")
+
+
+class COExtractionPreviewResponse(BaseModel):
+    course_id: int
+    course_code: str
+    extracted_outcomes: List[COExtractedItem]
+    total_extracted: int
+    source_type: str  # "text" or "file"
+    raw_text_snippet: Optional[str] = None
+
+
+class COImportConfirmItem(BaseModel):
+    code: str = Field(..., min_length=1, max_length=50)
+    description: str = Field(..., min_length=1)
+    sort_order: int = Field(0)
+
+    @field_validator("code", "description")
+    @classmethod
+    def strip_whitespace(cls, v: str) -> str:
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            if not v_stripped:
+                raise ValueError("Field cannot be empty or only whitespace")
+            return v_stripped
+        return v
+
+
+class COImportConfirmRequest(BaseModel):
+    outcomes: List[COImportConfirmItem] = Field(..., min_length=1, description="List of confirmed Course Outcomes")
+    mode: str = Field("replace", description="Import mode: 'replace' to overwrite existing COs, or 'append' to add new ones")
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, v: str) -> str:
+        v_clean = v.strip().lower()
+        if v_clean not in {"replace", "append"}:
+            raise ValueError("mode must be either 'replace' or 'append'")
+        return v_clean
+
+
+class COImportConfirmResponse(BaseModel):
+    course_id: int
+    mode: str
+    saved_outcomes: List[CourseOutcomeResponse]
+    total_saved: int
+    message: str
+

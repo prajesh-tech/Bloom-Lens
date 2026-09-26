@@ -1,5 +1,7 @@
+import os
+import tempfile
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -14,8 +16,15 @@ from app.schemas.course import (
     CourseOutcomeResponse,
     CourseOutcomeListResponse,
     CourseBulkOutcomeRequest,
+    COExtractTextRequest,
+    COExtractedItem,
+    COExtractionPreviewResponse,
+    COImportConfirmRequest,
+    COImportConfirmResponse,
 )
 from app.services.course_service import CourseService
+from app.services.co_extraction_service import COExtractionService
+
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
 
@@ -141,3 +150,121 @@ async def bulk_update_course_outcomes(
     outcomes = await CourseService.bulk_create_or_replace_outcomes(db, course_id, payload.outcomes)
     items = [CourseOutcomeResponse.model_validate(co) for co in outcomes]
     return CourseOutcomeListResponse(items=items, total=len(items))
+
+
+# ---------------- CO Import Flow (Preview & Confirmation) ---------------- #
+
+@router.post("/{course_id}/outcomes/extract-preview/text", response_model=COExtractionPreviewResponse)
+async def extract_preview_cos_from_text(
+    course_id: int,
+    payload: COExtractTextRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Extracts candidate Course Outcomes from raw syllabus text for review.
+    Does NOT write or modify the database.
+    """
+    course = await CourseService.get_course_by_id(db, course_id, include_outcomes=False)
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Course with ID {course_id} not found.",
+        )
+
+    raw_candidates = COExtractionService.extract_cos_from_text(payload.text)
+    extracted_items = [COExtractedItem(**item) for item in raw_candidates]
+
+    snippet = payload.text[:300] + "..." if len(payload.text) > 300 else payload.text
+
+    return COExtractionPreviewResponse(
+        course_id=course.id,
+        course_code=course.course_code,
+        extracted_outcomes=extracted_items,
+        total_extracted=len(extracted_items),
+        source_type="text",
+        raw_text_snippet=snippet,
+    )
+
+
+@router.post("/{course_id}/outcomes/extract-preview/file", response_model=COExtractionPreviewResponse)
+async def extract_preview_cos_from_file(
+    course_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Extracts candidate Course Outcomes from an uploaded PDF, DOCX, or TXT syllabus document.
+    Does NOT write or modify the database.
+    """
+    course = await CourseService.get_course_by_id(db, course_id, include_outcomes=False)
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Course with ID {course_id} not found.",
+        )
+
+    if not file.filename:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No file uploaded.")
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in [".pdf", ".docx", ".txt"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type '{ext}'. Supported formats: .pdf, .docx, .txt",
+        )
+
+    # Save to temp file
+    temp_dir = tempfile.mkdtemp(prefix="co_import_")
+    temp_path = os.path.join(temp_dir, file.filename)
+
+    try:
+        content = await file.read()
+        if not content or len(content) == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty.")
+
+        with open(temp_path, "wb") as f:
+            f.write(content)
+
+        raw_candidates = COExtractionService.extract_cos_from_file(temp_path)
+        extracted_items = [COExtractedItem(**item) for item in raw_candidates]
+
+        return COExtractionPreviewResponse(
+            course_id=course.id,
+            course_code=course.course_code,
+            extracted_outcomes=extracted_items,
+            total_extracted=len(extracted_items),
+            source_type="file",
+            raw_text_snippet=file.filename,
+        )
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        if os.path.exists(temp_dir):
+            os.rmdir(temp_dir)
+
+
+@router.post("/{course_id}/outcomes/confirm-import", response_model=COImportConfirmResponse)
+async def confirm_import_course_outcomes(
+    course_id: int,
+    payload: COImportConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Persists user-verified and edited Course Outcomes to the database.
+    Supports mode='replace' or mode='append'.
+    """
+    saved_cos = await CourseService.import_confirmed_outcomes(
+        db, course_id, payload.outcomes, mode=payload.mode
+    )
+    items = [CourseOutcomeResponse.model_validate(co) for co in saved_cos]
+
+    msg = f"Successfully imported {len(items)} outcomes into course (mode={payload.mode})."
+    return COImportConfirmResponse(
+        course_id=course_id,
+        mode=payload.mode,
+        saved_outcomes=items,
+        total_saved=len(items),
+        message=msg,
+    )
+

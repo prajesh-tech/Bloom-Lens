@@ -1,3 +1,5 @@
+from app.models.question_paper import QuestionPaper
+from app.models.course_outcome import CourseOutcome
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import String, Text, DateTime, Integer
