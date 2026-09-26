@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
     WARMUP_EMBEDDING_ON_STARTUP: bool = False
 
+    # Course Outcome (CO) Mapping Parameters & Weights
+    CO_MAPPING_WEIGHT_SEMANTIC: float = 0.40
+    CO_MAPPING_WEIGHT_CONCEPT: float = 0.35
+    CO_MAPPING_WEIGHT_BLOOM: float = 0.25
+    CO_MAPPING_VERIFICATION_THRESHOLD: float = 0.65
+    CO_MAPPING_MATCH_THRESHOLD: float = 0.40
+
     # OCR Settings
     OCR_LANG: str = "en"
 

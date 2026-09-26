@@ -21,6 +21,16 @@ from app.schemas.course import (
     COImportConfirmRequest,
     COImportConfirmResponse,
 )
+from app.schemas.co_mapping import (
+    COScoreBreakdown,
+    COMappingCandidate,
+    QuestionCOMappingResult,
+    QuestionCOMappingRequest,
+    BatchCOPaperMappingRequest,
+    BatchCOMappingResponse,
+    QuestionCOMappingRecordResponse,
+    GeminiCOMappingResponse,
+)
 
 __all__ = [
     "CourseBase",
@@ -42,4 +52,12 @@ __all__ = [
     "COImportConfirmItem",
     "COImportConfirmRequest",
     "COImportConfirmResponse",
+    "COScoreBreakdown",
+    "COMappingCandidate",
+    "QuestionCOMappingResult",
+    "QuestionCOMappingRequest",
+    "BatchCOPaperMappingRequest",
+    "BatchCOMappingResponse",
+    "QuestionCOMappingRecordResponse",
+    "GeminiCOMappingResponse",
 ]

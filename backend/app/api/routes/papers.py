@@ -19,6 +19,9 @@ from app.models.question import Question
 from app.models.topic import Topic, QuestionTopic
 from app.models.question_similarity import QuestionSimilarity
 from app.models.bloom_level import BloomLevel
+from app.models.course import Course
+from app.models.course_outcome import CourseOutcome
+from app.models.question_course_outcome import QuestionCourseOutcome
 from app.schemas.paper import PaperResponse, PaperStatusResponse, PaperListResponse
 from app.schemas.question import QuestionResponse
 from app.services.document_service import DocumentService
@@ -27,6 +30,7 @@ from app.services.topic_service import TopicService
 from app.services.bloom_service import BloomService, BLOOM_LEVEL_MAP
 from app.services.similarity_service import SimilarityService
 from app.services.embedding_service import EmbeddingService
+from app.services.co_mapping_service import COMappingService
 from app.core.errors import raise_api_error
 from app.core.metrics import metrics
 from app.utils.validators import read_and_validate_upload, SUPPORTED_EXAM_TYPES, safe_upload_path
@@ -42,6 +46,7 @@ async def upload_question_paper(
     examination_type: str = Form(..., description="Exam type e.g. Mid-Term, End-Semester"),
     maximum_marks: float = Form(..., description="Maximum paper marks > 0"),
     year_date: Optional[str] = Form(None, description="Year or Date e.g. 2024"),
+    course_id: Optional[int] = Form(None, description="Optional Course ID for Course Outcome mapping"),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -74,9 +79,16 @@ async def upload_question_paper(
             subj_res = await db.execute(subj_stmt)
             subject = subj_res.scalar_one_or_none()
 
-    # 4. Create QuestionPaper record
+    # 4. Resolve Course ID if provided or matching course code exists
+    resolved_course_id = course_id
+    if not resolved_course_id:
+        course_stmt = select(Course.id).where(Course.course_code == subj_code_clean)
+        resolved_course_id = (await db.execute(course_stmt)).scalar_one_or_none()
+
+    # Create QuestionPaper record
     paper = QuestionPaper(
         subject_id=subject.id,
+        course_id=resolved_course_id,
         examination_type=examination_type.strip(),
         maximum_marks=maximum_marks,
         original_filename=orig_filename,
@@ -287,6 +299,51 @@ async def upload_question_paper(
                     )
             if similarity_records:
                 db.add_all(similarity_records)
+
+        # 11. Automatic Course Outcome Mapping (if linked to a course with outcomes)
+        if paper.course_id:
+            try:
+                cos_res = await db.execute(
+                    select(CourseOutcome)
+                    .where(CourseOutcome.course_id == paper.course_id)
+                    .order_by(CourseOutcome.sort_order)
+                )
+                course_outcomes = cos_res.scalars().all()
+                if course_outcomes:
+                    co_records = []
+                    for q_entity in created_questions:
+                        bloom_code = None
+                        if q_entity.effective_bloom_level_id:
+                            lvl_stmt = select(BloomLevel.level_code).where(BloomLevel.id == q_entity.effective_bloom_level_id)
+                            bloom_code = (await db.execute(lvl_stmt)).scalar_one_or_none()
+
+                        map_res = COMappingService.map_question(
+                            question_text=q_entity.original_text,
+                            course_outcomes=course_outcomes,
+                            question_bloom_level=bloom_code,
+                            question_id=q_entity.id,
+                            top_k=1,
+                        )
+                        if map_res.primary_outcome and map_res.primary_outcome.final_score >= settings.CO_MAPPING_MATCH_THRESHOLD:
+                            co_records.append(
+                                QuestionCourseOutcome(
+                                    question_id=q_entity.id,
+                                    course_outcome_id=map_res.primary_outcome.course_outcome_id,
+                                    semantic_score=map_res.primary_outcome.semantic_score,
+                                    concept_score=map_res.primary_outcome.concept_score,
+                                    bloom_consistency_score=map_res.primary_outcome.bloom_consistency_score,
+                                    final_score=map_res.primary_outcome.final_score,
+                                    ai_confidence=map_res.ai_confidence,
+                                    llm_verified=map_res.llm_verified,
+                                    llm_reason=map_res.llm_reason,
+                                    human_verified=False,
+                                    human_override=False,
+                                )
+                            )
+                    if co_records:
+                        db.add_all(co_records)
+            except Exception as co_err:
+                logger.warning(f"Automatic CO mapping during paper upload skipped or failed: {co_err}")
 
         paper.processing_status = "COMPLETED"
         await db.commit()

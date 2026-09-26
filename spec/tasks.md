@@ -40,8 +40,8 @@ The implementation status for the V2 Course Outcomes roadmap is tracked below:
 | **Phase 0** | Discovery & Baseline Verification | Backend / Test | `[x] Completed` |
 | **Phase 1** | Domain Models & Migration (`Course`, `CourseOutcome`, `QuestionCourseOutcome`, Alembic) | Backend | `[x] Completed` |
 | **Phase 2** | Course & Course Outcome Management API (`CourseService`, schemas, CRUD routes) | Backend | `[x] Completed` |
-| **Phase 3** | CO Import Flow (Manual-first CO management, extraction preview & confirmation) | Backend | `[ ] In Progress` |
-| **Phase 4** | Hybrid CO Mapping Service (Semantic + Concept + Bloom consistency + Gemini fallback) | Backend | `[ ] Pending` |
+| **Phase 3** | CO Import Flow (Manual-first CO management, extraction preview & confirmation) | Backend | `[x] Completed` |
+| **Phase 4** | Hybrid CO Mapping Service (Semantic + Concept + Bloom consistency + Gemini fallback) | Backend | `[x] Completed` |
 | **Phase 5** | Question API & Human Review Extensions (CO mappings, review status, override audit) | Backend | `[ ] Pending` |
 | **Phase 6** | CO Analytics Engine (`co-distribution`, `co-bloom`, `co-trends`, `co-coverage`, `topic-co`) | Backend | `[ ] Pending` |
 | **Phase 7** | Configuration, Error Handling & Security (Pydantic settings, sanitization, validation) | Backend | `[ ] Pending` |
