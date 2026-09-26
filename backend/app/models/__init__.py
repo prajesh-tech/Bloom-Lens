@@ -4,6 +4,9 @@ from app.models.question_paper import QuestionPaper
 from app.models.question import Question
 from app.models.topic import Topic, QuestionTopic
 from app.models.question_similarity import QuestionSimilarity
+from app.models.course import Course
+from app.models.course_outcome import CourseOutcome
+from app.models.question_course_outcome import QuestionCourseOutcome
 
 __all__ = [
     "Subject",
@@ -13,4 +16,8 @@ __all__ = [
     "Topic",
     "QuestionTopic",
     "QuestionSimilarity",
+    "Course",
+    "CourseOutcome",
+    "QuestionCourseOutcome",
 ]
+

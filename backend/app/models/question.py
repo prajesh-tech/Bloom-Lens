@@ -98,3 +98,7 @@ class Question(Base):
         back_populates="target_question",
         cascade="all, delete-orphan",
     )
+    course_outcomes: Mapped[List["QuestionCourseOutcome"]] = relationship(
+        "QuestionCourseOutcome", back_populates="question", cascade="all, delete-orphan"
+    )
+

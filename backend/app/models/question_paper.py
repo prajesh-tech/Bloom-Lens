@@ -12,6 +12,9 @@ class QuestionPaper(Base):
     subject_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    course_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("courses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     examination_type: Mapped[str] = mapped_column(String(100), nullable=False)  # Mid-Term, End-Semester, Internal, etc.
     maximum_marks: Mapped[float] = mapped_column(Float, nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -42,6 +45,7 @@ class QuestionPaper(Base):
 
     # Relationships
     subject: Mapped["Subject"] = relationship("Subject", back_populates="question_papers")
+    course: Mapped[Optional["Course"]] = relationship("Course", back_populates="question_papers")
     questions: Mapped[List["Question"]] = relationship(
         "Question", back_populates="question_paper", cascade="all, delete-orphan"
     )
