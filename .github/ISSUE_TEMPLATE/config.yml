@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security Vulnerability Reporting
+    url: https://github.com/prajesh-tech/Bloom-Lens/security/advisories/new
+    about: Please report sensitive security vulnerabilities privately instead of opening a public issue.
+  - name: Project Documentation
+    url: https://github.com/prajesh-tech/Bloom-Lens#documentation-links
+    about: Explore BloomLens design specifications, developer guide, and API contracts.
