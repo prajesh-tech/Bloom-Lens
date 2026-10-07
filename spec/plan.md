@@ -65,10 +65,11 @@ To maintain focus and deliver a stable initial version, boundaries have been est
 - **Hybrid Cognitive Analysis**: Five stages of NLP checks yielding an effective Bloom level.
 - **Duplicate & Semantic Detection**: Identifies exact and semantic repetitions across the historical dataset.
 - **Human-in-the-Loop Reviews**: UI interface allowing reviewers to verify and correct AI classifications with atomic topic updates.
+- **Estimated Student Performance Heuristic**: Pure deterministic projection of estimated pass percentage and average marks computed solely from the paper's marks-weighted Bloom's Taxonomy distribution (never actual student statistics; does not pull forward V2 Student Performance Analytics).
 - **Security & Reliability Hardening**: API key authentication, bounded Gemini timeouts, thread-safe model caching, explicit database transactions, and disk cleanup.
 
 ### Excluded (Reserved for V2 Milestone)
 - **Course Outcomes (COs) Mapping**: Linking specific questions to Course Outcomes (COs) or Program Outcomes (POs).
 - **Attainment Matrices**: Automatically computing academic attainment charts or matrices based on examination results.
-- **Student Performance Models**: Predicting exam performance or student grades based on historical question difficulty.
+- **Student Performance Models (Empirical/Cohort)**: Full empirical student response modeling, actual student marks/cohort records, and evaluator factor modeling.
 - **Automatic Exam Paper Generation**: AI-driven generation of new question papers or prediction of future exam questions.

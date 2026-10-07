@@ -102,7 +102,8 @@ Business Services
     ├── Question Extraction & Marks Normalization
     ├── Hybrid Bloom Taxonomy Classifier
     ├── FAISS Similarity Engine
-    └── Analytics Aggregator
+    ├── Analytics Aggregator
+    └── Performance Estimation Service (Heuristic Bloom difficulty model)
     ↓
 Database Access Layer (SQLAlchemy 2.x Async ORM)
     ↓
@@ -166,6 +167,7 @@ All endpoints reside under `/api/v1/`:
 | `GET` | `/api/v1/papers` | Paginated paper history list | No |
 | `GET` | `/api/v1/papers/{id}` | Get paper details | No |
 | `GET` | `/api/v1/papers/{id}/status` | Poll paper processing status | No |
+| `GET` | `/api/v1/papers/{id}/performance-estimate` | Heuristic estimated student performance | No |
 | `DELETE` | `/api/v1/papers/{id}` | Delete paper and cascade questions | Yes |
 | `GET` | `/api/v1/questions` | Search, filter & paginate questions | No |
 | `GET` | `/api/v1/questions/{id}` | Single question detail & sub-questions | No |
@@ -200,7 +202,27 @@ All endpoints reside under `/api/v1/`:
 
 ---
 
-## 10. Future V2 Extension Points
+## 10. Estimated Student Performance Architecture
+
+BloomLens computes heuristic projections of student performance for completed question papers using only their marks-weighted Bloom's Taxonomy distribution.
+
+> [!NOTE]
+> Values are heuristic estimates derived solely from the question paper's Bloom's Taxonomy and marks distribution, not actual student statistics. This does not pull forward V2 "Student Performance Analytics" (student marks/records/rosters).
+
+### Heuristic Mathematical Formulation
+- **Scoring Units**: Uses leaf-level questions only (sub-questions or parent questions without sub-questions) to avoid double counting.
+- **Paper Difficulty ($D$)**:
+  $$D = \frac{\sum_{i \in \text{valid}} (\text{marks}_i \times w(\text{level}_i))}{\sum_{i \in \text{valid}} \text{marks}_i}$$
+  where weights $w$ default to: L1=0.10, L2=0.25, L3=0.45, L4=0.65, L5=0.85, L6=1.00.
+- **Mappings (Clamped $[0, 100]$)**:
+  - $\text{Estimated Pass \%} = \text{clamp}(95.0 - 65.0 \times D, 0, 100)$
+  - $\text{Estimated Avg \%} = \text{clamp}(80.0 - 50.0 \times D, 0, 100)$
+  - $\text{Estimated Average Marks} = \frac{\text{Estimated Avg \%}}{100} \times \text{maximum\_marks}$
+- **Configurability**: Tunable in `backend/app/core/config.py` via `ESTIMATE_BLOOM_WEIGHT_L1`..`L6`, `ESTIMATE_PASS_PCT_INTERCEPT`, `ESTIMATE_PASS_PCT_SLOPE`, `ESTIMATE_AVG_PCT_INTERCEPT`, `ESTIMATE_AVG_PCT_SLOPE`, and `ESTIMATE_MAX_EXCLUDED_MARKS_RATIO` (default 0.20).
+
+---
+
+## 11. Future V2 Extension Points
 
 The architecture cleanly supports future V2 extensions without restructuring V1 code:
 - **Course Outcomes (COs)**: Adding `course_outcomes` and `question_course_outcomes` tables.

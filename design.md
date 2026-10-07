@@ -111,3 +111,27 @@ Our relational database models are organized as follows:
 - **`topics`**: Topic classifications mapping.
 - **`question_topics`**: Association table linking questions to topics with a unique constraint on `(question_id, topic_id)`.
 - **`question_similarities`**: Records of identical or semantically similar historical questions linking `source_question_id` to `target_question_id`.
+
+---
+
+## 6. Estimated Student Performance Design
+
+BloomLens computes heuristic projections of student pass percentage and average marks on demand for completed question papers without storing estimates in the database.
+
+> [!NOTE]
+> Values are heuristic estimates derived solely from the question paper's Bloom's Taxonomy and marks distribution, not actual student statistics. This read-time feature does not pull forward V2 "Student Performance Analytics".
+
+### Architectural Design
+- **Read-Time Derivation**: Computed in [`performance_estimation_service.py`](file:///home/Prajesh/sp/backend/app/services/performance_estimation_service.py) on `GET /api/v1/papers/{id}/performance-estimate`. Automatically reflects human overrides without database migration or persisting redundant fields.
+- **Leaf-Level Scoring**: Uses only leaf questions (sub-questions or parent questions without sub-questions) matching the marks-weighted analytics rule to prevent double counting parent container marks.
+- **Paper Difficulty ($D$)**:
+  $$D = \frac{\sum_{i \in \text{valid}} (\text{marks}_i \times w(\text{level}_i))}{\sum_{i \in \text{valid}} \text{marks}_i}$$
+- **Linear Clamped Projections**:
+  - $\text{Estimated Pass \%} = \text{clamp}(95.0 - 65.0 \times D, 0, 100)$
+  - $\text{Estimated Avg \%} = \text{clamp}(80.0 - 50.0 \times D, 0, 100)$
+  - $\text{Estimated Average Marks} = \frac{\text{Estimated Avg \%}}{100} \times \text{maximum\_marks}$
+- **Configurability**: Configured in [`backend/app/core/config.py`](file:///home/Prajesh/sp/backend/app/core/config.py):
+  - Difficulty weights: `ESTIMATE_BLOOM_WEIGHT_L1` (0.10) to `L6` (1.00)
+  - Mapping slopes and intercepts: `ESTIMATE_PASS_PCT_INTERCEPT`, `ESTIMATE_PASS_PCT_SLOPE`, `ESTIMATE_AVG_PCT_INTERCEPT`, `ESTIMATE_AVG_PCT_SLOPE`
+  - Exclusion threshold: `ESTIMATE_MAX_EXCLUDED_MARKS_RATIO` (default 0.20 / 20%). Returns unavailable (`too_many_excluded`) if excluded marks exceed threshold.
+

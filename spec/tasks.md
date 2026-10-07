@@ -28,6 +28,7 @@ The status of the core deliverables in the current release is tracked below:
 | Human-in-the-Loop sidebar review/override drawer | Frontend | `[x] Completed` |
 | Dual-Mode API Switch (Mock offline vs Live mode with API Key support) | Frontend | `[x] Completed` |
 | Multi-page full question pagination retrieval | Frontend | `[x] Completed` |
+| Estimated Student Performance heuristic derivation & UI card | Backend / Frontend | `[x] Completed` |
 
 ---
 

@@ -57,6 +57,18 @@ All routes are served under `/api/v1`. Sensitive write and analytics endpoints r
 - **`GET /api/v1/papers/{id}/status`** *(Public)*
   - **Description**: Poll processing status (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`).
 
+- **`GET /api/v1/papers/{id}/performance-estimate`** *(Public)*
+  - **Description**: Derives heuristic estimated student performance (`estimated_pass_percentage` and `estimated_average_marks`) using only the paper's marks-weighted Bloom's Taxonomy distribution (L1–L6). Not actual student statistics.
+  - **Response**:
+    ```json
+    {
+      "estimated_pass_percentage": 72.0,
+      "estimated_average_marks": 58.0,
+      "reason": null
+    }
+    ```
+    If paper is not completed or questions with missing/invalid marks or levels exceed 20%, returns `{ "estimated_pass_percentage": null, "estimated_average_marks": null, "reason": "reason_code" }`.
+
 - **`DELETE /api/v1/papers/{id}`** *(Authenticated)*
   - **Description**: Deletes paper, cascade-deletes associated questions, topics, and similarities, and removes stored file from disk.
 
