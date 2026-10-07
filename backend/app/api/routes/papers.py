@@ -19,10 +19,11 @@ from app.models.question import Question
 from app.models.topic import Topic, QuestionTopic
 from app.models.question_similarity import QuestionSimilarity
 from app.models.bloom_level import BloomLevel
-from app.schemas.paper import PaperResponse, PaperStatusResponse, PaperListResponse
+from app.schemas.paper import PaperResponse, PaperStatusResponse, PaperListResponse, PerformanceEstimateResponse
 from app.schemas.question import QuestionResponse
 from app.services.document_service import DocumentService
 from app.services.question_extraction_service import QuestionExtractionService
+from app.services.performance_estimation_service import PerformanceEstimationService
 from app.services.topic_service import TopicService
 from app.services.bloom_service import BloomService, BLOOM_LEVEL_MAP
 from app.services.similarity_service import SimilarityService
@@ -419,6 +420,16 @@ async def get_paper_status(paper_id: int, db: AsyncSession = Depends(get_db)):
         validation_metadata=paper.validation_metadata,
         message=f"Paper is currently {paper.processing_status}.",
     )
+
+
+@router.get("/{paper_id}/performance-estimate", response_model=PerformanceEstimateResponse)
+async def get_performance_estimate(paper_id: int, db: AsyncSession = Depends(get_db)):
+    """Computes heuristic estimated student performance for an analyzed question paper."""
+    estimate = await PerformanceEstimationService.get_estimate_for_paper(db, paper_id)
+    if estimate is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Question paper {paper_id} not found.")
+
+    return estimate
 
 
 @router.delete("/{paper_id}", status_code=status.HTTP_204_NO_CONTENT)

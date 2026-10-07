@@ -1,4 +1,5 @@
 from typing import List, Optional
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,6 +47,46 @@ class Settings(BaseSettings):
 
     # OCR Settings
     OCR_LANG: str = "en"
+
+    # Performance Estimation Parameters & Weights
+    ESTIMATE_BLOOM_WEIGHT_L1: float = 0.10
+    ESTIMATE_BLOOM_WEIGHT_L2: float = 0.25
+    ESTIMATE_BLOOM_WEIGHT_L3: float = 0.45
+    ESTIMATE_BLOOM_WEIGHT_L4: float = 0.65
+    ESTIMATE_BLOOM_WEIGHT_L5: float = 0.85
+    ESTIMATE_BLOOM_WEIGHT_L6: float = 1.00
+
+    ESTIMATE_PASS_PCT_INTERCEPT: float = 95.0
+    ESTIMATE_PASS_PCT_SLOPE: float = 65.0
+
+    ESTIMATE_AVG_PCT_INTERCEPT: float = 80.0
+    ESTIMATE_AVG_PCT_SLOPE: float = 50.0
+
+    ESTIMATE_MAX_EXCLUDED_MARKS_RATIO: float = 0.20
+
+    @model_validator(mode="after")
+    def validate_estimate_parameters(self) -> "Settings":
+        weights = [
+            self.ESTIMATE_BLOOM_WEIGHT_L1,
+            self.ESTIMATE_BLOOM_WEIGHT_L2,
+            self.ESTIMATE_BLOOM_WEIGHT_L3,
+            self.ESTIMATE_BLOOM_WEIGHT_L4,
+            self.ESTIMATE_BLOOM_WEIGHT_L5,
+            self.ESTIMATE_BLOOM_WEIGHT_L6,
+        ]
+        for idx, w in enumerate(weights, start=1):
+            if not (0.0 <= w <= 1.0):
+                raise ValueError(f"ESTIMATE_BLOOM_WEIGHT_L{idx} must be between 0.0 and 1.0, got {w}")
+        for i in range(len(weights) - 1):
+            if weights[i] > weights[i + 1]:
+                raise ValueError(
+                    f"Bloom weights must be non-decreasing: L{i+1} ({weights[i]}) > L{i+2} ({weights[i+1]})"
+                )
+        if not (0.0 <= self.ESTIMATE_MAX_EXCLUDED_MARKS_RATIO <= 1.0):
+            raise ValueError(
+                f"ESTIMATE_MAX_EXCLUDED_MARKS_RATIO must be between 0.0 and 1.0, got {self.ESTIMATE_MAX_EXCLUDED_MARKS_RATIO}"
+            )
+        return self
 
     @property
     def cors_origins(self) -> List[str]:

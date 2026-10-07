@@ -55,3 +55,15 @@ class PaperListResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class PerformanceEstimateResponse(BaseModel):
+    estimated_pass_percentage: Optional[float] = Field(
+        None, description="Heuristic estimated pass percentage (0-100), rounded to 1 decimal place"
+    )
+    estimated_average_marks: Optional[float] = Field(
+        None, description="Heuristic estimated average marks, rounded to 1 decimal place"
+    )
+    reason: Optional[str] = Field(
+        None, description="Short reason code if estimate is unavailable"
+    )
