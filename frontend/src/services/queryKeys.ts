@@ -5,4 +5,5 @@ export const queryKeys = {
   history: (page: number, limit: number) => ['papers', 'history', page, limit] as const,
   paper: (paperId: number) => ['papers', paperId] as const,
   paperQuestions: (paperId: number) => ['papers', paperId, 'questions'] as const,
+  performanceEstimate: (paperId: number) => ['papers', paperId, 'performance-estimate'] as const,
 };

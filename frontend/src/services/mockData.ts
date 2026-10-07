@@ -1,4 +1,4 @@
-import { QuestionPaper } from '../types/paper';
+import { QuestionPaper, PerformanceEstimate } from '../types/paper';
 import { QuestionAnalysis } from '../types/question';
 import { OverviewAnalytics, BloomAnalyticsData, TrendsAnalyticsData } from '../types/analytics';
 
@@ -283,3 +283,22 @@ export const MOCK_TRENDS_ANALYTICS: TrendsAnalyticsData = {
     { paper: '2024 End-Sem', year: '2024', L1: 15, L2: 20, L3: 22, L4: 18, L5: 10, L6: 15 },
   ],
 };
+
+export const MOCK_PERFORMANCE_ESTIMATES: Record<number, PerformanceEstimate> = {
+  101: {
+    estimated_pass_percentage: 72.0,
+    estimated_average_marks: 58.0,
+    reason: null,
+  },
+  102: {
+    estimated_pass_percentage: 65.5,
+    estimated_average_marks: 31.0,
+    reason: null,
+  },
+  103: {
+    estimated_pass_percentage: 78.0,
+    estimated_average_marks: 22.5,
+    reason: null,
+  },
+};
+

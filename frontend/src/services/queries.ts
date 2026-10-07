@@ -44,7 +44,21 @@ export function useAnalysisResultQueries(paperId: number) {
     enabled: Number.isFinite(paperId),
   });
 
-  return { paper, questions };
+  const performanceEstimate = useQuery({
+    queryKey: queryKeys.performanceEstimate(paperId),
+    queryFn: () => analysisApi.getPerformanceEstimate(paperId),
+    enabled: Number.isFinite(paperId),
+  });
+
+  return { paper, questions, performanceEstimate };
+}
+
+export function usePerformanceEstimateQuery(paperId: number) {
+  return useQuery({
+    queryKey: queryKeys.performanceEstimate(paperId),
+    queryFn: () => analysisApi.getPerformanceEstimate(paperId),
+    enabled: Number.isFinite(paperId),
+  });
 }
 
 export function useUploadPaperMutation() {
@@ -68,6 +82,7 @@ export function useDeletePaperMutation() {
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
       queryClient.removeQueries({ queryKey: queryKeys.paper(paperId) });
       queryClient.removeQueries({ queryKey: queryKeys.paperQuestions(paperId) });
+      queryClient.removeQueries({ queryKey: queryKeys.performanceEstimate(paperId) });
     },
   });
 }
@@ -87,6 +102,7 @@ export function usePatchQuestionMutation(paperId: number) {
         );
       });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performanceEstimate(paperId) });
     },
   });
 }

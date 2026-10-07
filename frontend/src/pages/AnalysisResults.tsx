@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { AnalysisHeader } from '../components/analysis/AnalysisHeader';
 import { SummaryCards } from '../components/analysis/SummaryCards';
+import { PerformanceEstimateCard } from '../components/analysis/PerformanceEstimateCard';
 import { QuestionFilterBar } from '../components/analysis/QuestionFilterBar';
 import { QuestionTable } from '../components/analysis/QuestionTable';
 import { QuestionDrawer } from '../components/analysis/QuestionDrawer';
@@ -124,6 +125,9 @@ export const AnalysisResults: React.FC = () => {
 
       {/* Summary Stat Cards */}
       <SummaryCards paper={paper} questionCount={questions.length} />
+
+      {/* Estimated Student Performance Card */}
+      <PerformanceEstimateCard paperId={paper.id} maxMarks={paper.maximum_marks} />
 
       {/* Visual Analytics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

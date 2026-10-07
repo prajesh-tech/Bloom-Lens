@@ -1,9 +1,16 @@
 import { apiClient } from './api';
-import { PaperUploadPayload, QuestionPaper } from '../types/paper';
+import { PaperUploadPayload, QuestionPaper, PerformanceEstimate } from '../types/paper';
 import { QuestionAnalysis, QuestionPatchPayload } from '../types/question';
 import { BloomAnalyticsData, TrendsAnalyticsData, OverviewAnalytics } from '../types/analytics';
 import { simulateMockLatency } from '../utils/latency';
-import { MOCK_PAPERS, MOCK_QUESTIONS_MAP, MOCK_BLOOM_ANALYTICS, MOCK_TRENDS_ANALYTICS, MOCK_OVERVIEW_ANALYTICS } from './mockData';
+import {
+  MOCK_PAPERS,
+  MOCK_QUESTIONS_MAP,
+  MOCK_BLOOM_ANALYTICS,
+  MOCK_TRENDS_ANALYTICS,
+  MOCK_OVERVIEW_ANALYTICS,
+  MOCK_PERFORMANCE_ESTIMATES,
+} from './mockData';
 
 const isMock = () => import.meta.env.VITE_USE_MOCK_API === 'true';
 
@@ -167,4 +174,21 @@ export const analysisApi = {
     const { data } = await apiClient.get<OverviewAnalytics>('/analytics/overview');
     return data;
   },
+
+  async getPerformanceEstimate(paperId: number): Promise<PerformanceEstimate> {
+    if (isMock()) {
+      await simulateMockLatency();
+      return (
+        MOCK_PERFORMANCE_ESTIMATES[paperId] || {
+          estimated_pass_percentage: 72.0,
+          estimated_average_marks: 58.0,
+          reason: null,
+        }
+      );
+    }
+
+    const { data } = await apiClient.get<PerformanceEstimate>(`/papers/${paperId}/performance-estimate`);
+    return data;
+  },
 };
+

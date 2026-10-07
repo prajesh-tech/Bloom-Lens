@@ -31,3 +31,9 @@ export interface PaperUploadPayload {
   year_date?: string;
   file: File;
 }
+
+export interface PerformanceEstimate {
+  estimated_pass_percentage: number | null;
+  estimated_average_marks: number | null;
+  reason?: string | null;
+}
