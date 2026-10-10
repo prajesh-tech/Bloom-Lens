@@ -8,15 +8,14 @@ import { useTheme } from '../../context/ThemeContext';
 
 interface BloomDonutChartProps {
   data: BloomDistributionItem[];
-  totalQuestions: number;
 }
 
 export const BloomDonutChart: React.FC<BloomDonutChartProps> = ({
   data,
-  totalQuestions,
 }) => {
   const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
   const { theme } = useTheme();
+  const totalQuestions = data.reduce((total, item) => total + item.question_count, 0);
 
   const formattedChartData = data.map((item) => {
     const config = getBloomConfig(item.name || item.bloom_level);

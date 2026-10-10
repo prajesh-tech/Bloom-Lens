@@ -126,7 +126,7 @@ export const Home: React.FC = () => {
           {loading || !bloomAnalytics ? (
             <Skeleton className="h-64 w-full" />
           ) : (
-            <BloomDonutChart data={bloomAnalytics.distributions} totalQuestions={bloomAnalytics.total_questions} />
+            <BloomDonutChart data={bloomAnalytics.distributions} />
           )}
         </Card>
 

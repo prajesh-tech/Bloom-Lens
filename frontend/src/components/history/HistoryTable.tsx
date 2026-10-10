@@ -30,6 +30,22 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ papers, onDeletePape
     }
   };
 
+  const getStatusVariant = (status: QuestionPaper['processing_status']) => {
+    switch (status) {
+      case 'COMPLETED':
+      case 'EXTRACTED':
+        return 'success';
+      case 'FAILED':
+        return 'danger';
+      case 'PROCESSING':
+      case 'ANALYZING':
+      case 'REVIEW_REQUIRED':
+        return 'warning';
+      case 'UPLOADED':
+        return 'default';
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden space-y-4 p-4 sm:p-6 transition-colors">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -80,7 +96,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ papers, onDeletePape
                   {formatDate(paper.upload_timestamp)}
                 </td>
                 <td className="py-4 px-4">
-                  <Badge variant="success" size="sm" className="font-mono">
+                  <Badge variant={getStatusVariant(paper.processing_status)} size="sm" className="font-mono">
                     {paper.processing_status}
                   </Badge>
                 </td>

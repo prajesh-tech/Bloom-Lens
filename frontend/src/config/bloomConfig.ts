@@ -87,6 +87,22 @@ export const BLOOM_LABEL_TO_CODE: Record<BloomLevel, BloomCode> = {
   Create: 'L6',
 };
 
+function isBloomCode(level: string): level is BloomCode {
+  return Object.prototype.hasOwnProperty.call(BLOOM_CODE_TO_LABEL, level);
+}
+
+export function getBloomCode(level?: string): BloomCode | undefined {
+  if (!level) return undefined;
+
+  const normalized = level.trim().toUpperCase();
+  if (isBloomCode(normalized)) return normalized;
+
+  const label = (Object.keys(BLOOM_LABEL_TO_CODE) as BloomLevel[]).find(
+    (candidate) => candidate.toUpperCase() === normalized
+  );
+  return label ? BLOOM_LABEL_TO_CODE[label] : undefined;
+}
+
 export function getBloomConfig(level?: string): BloomConfigItem {
   if (!level) return BLOOM_CONFIG.Remember;
   

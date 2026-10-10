@@ -1,10 +1,13 @@
 /**
- * Formats question marks e.g., 5 -> "05 marks", null -> "—"
+ * Formats question marks e.g., 5 -> "05 marks", 2.5 -> "2.5 marks", null -> "—"
+ * Only single-digit integers (1–9) get a leading zero; floats are never padded.
  */
 export function formatMarks(marks?: number | null): string {
   if (marks === undefined || marks === null) return '—';
-  const rounded = Number.isInteger(marks) ? marks : marks.toFixed(1);
-  return marks < 10 && marks >= 0 ? `0${rounded} marks` : `${rounded} marks`;
+  const isWholeNumber = Number.isInteger(marks);
+  const rounded = isWholeNumber ? marks : marks.toFixed(1);
+  const padded = isWholeNumber && marks >= 1 && marks < 10 ? `0${rounded}` : `${rounded}`;
+  return `${padded} marks`;
 }
 
 /**

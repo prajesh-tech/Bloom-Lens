@@ -10,7 +10,8 @@ interface SummaryCardsProps {
 
 export const SummaryCards: React.FC<SummaryCardsProps> = ({ paper, questionCount }) => {
   const valMeta = paper.validation_metadata;
-  const isMismatch = paper.validation_status === 'MISMATCH' || paper.validation_status === 'UNCERTAIN';
+  const validationStatus = paper.validation_status.toUpperCase();
+  const isMismatch = validationStatus === 'MISMATCH' || validationStatus === 'UNCERTAIN';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

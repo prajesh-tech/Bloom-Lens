@@ -5,7 +5,7 @@ import { BloomBadge } from '../common/BloomBadge';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { formatMarks, formatConfidence, formatQuestionId } from '../../utils/formatters';
-import { BLOOM_CONFIG } from '../../config/bloomConfig';
+import { BLOOM_CONFIG, getBloomCode, getBloomConfig } from '../../config/bloomConfig';
 import { Copy, Edit3, Check, AlertTriangle, Sparkles } from 'lucide-react';
 import { toast } from '../common/Toast';
 
@@ -38,7 +38,10 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
     if (question) {
       setEditText(question.original_text);
       setEditMarks(question.marks ?? '');
-      setEditBloom(question.effective_bloom_level || question.ai_bloom_level || 'Remember');
+      // Normalize Bloom level to label name (e.g. 'L1' -> 'Remember') so the select populates correctly
+      const rawBloom = question.effective_bloom_level || question.ai_bloom_level || 'Remember';
+      const normalizedBloom = getBloomConfig(rawBloom).label;
+      setEditBloom(normalizedBloom);
       setEditTopic(question.topic || '');
       setEditUnit(question.unit || '');
       setEditType(question.question_type || 'Descriptive');
@@ -63,10 +66,15 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
     e.preventDefault();
     setIsSaving(true);
     try {
+      const bloomCode = getBloomCode(editBloom);
+      if (!bloomCode) {
+        throw new Error('Please select a valid Bloom level.');
+      }
+
       await onSaveOverride(question.id, {
         question_text: editText,
         marks: editMarks === '' ? undefined : Number(editMarks),
-        bloom_level: editBloom,
+        bloom_level: bloomCode,
         topic_name: editTopic || undefined,
         unit: editUnit || undefined,
         question_type: editType || undefined,
@@ -203,6 +211,19 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
                 className="w-full px-3 py-1.5 text-sm font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
               />
             </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Question Type</label>
+              <select
+                value={editType}
+                onChange={(e) => setEditType(e.target.value)}
+                className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
+              >
+                {['Descriptive', 'Numerical', 'MCQ', 'Short Answer', 'Diagram', 'Case Study'].map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
@@ -253,7 +274,7 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
       {/* Detailed Signal Scores */}
       {meta && (
         <div className="space-y-3">
-          <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Component Signal Signals</h4>
+        <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Component Signal Scores</h4>
           <div className="space-y-2">
             {meta.cognitive_operation && (
               <div className="text-xs p-3 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">

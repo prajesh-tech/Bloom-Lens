@@ -11,7 +11,7 @@ export interface QuestionPaper {
   year_date?: string;
   processing_status: 'UPLOADED' | 'PROCESSING' | 'EXTRACTED' | 'ANALYZING' | 'COMPLETED' | 'REVIEW_REQUIRED' | 'FAILED';
   extraction_status: 'PENDING' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
-  validation_status: 'NOT_VALIDATED' | 'VALID' | 'MISMATCH' | 'UNCERTAIN' | 'REQUIRES_REVIEW';
+  validation_status: 'NOT_VALIDATED' | 'VALID' | 'MISMATCH' | 'UNCERTAIN' | 'uncertain' | 'REQUIRES_REVIEW';
   optional_question_flag: boolean;
   validation_metadata?: {
     status?: string;

@@ -44,13 +44,7 @@ export function useAnalysisResultQueries(paperId: number) {
     enabled: Number.isFinite(paperId),
   });
 
-  const performanceEstimate = useQuery({
-    queryKey: queryKeys.performanceEstimate(paperId),
-    queryFn: () => analysisApi.getPerformanceEstimate(paperId),
-    enabled: Number.isFinite(paperId),
-  });
-
-  return { paper, questions, performanceEstimate };
+  return { paper, questions };
 }
 
 export function usePerformanceEstimateQuery(paperId: number) {

@@ -6,12 +6,14 @@ import { Download, Calendar, FileCheck, ArrowLeft, Printer } from 'lucide-react'
 import { formatDate } from '../../utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../common/Toast';
+import { QuestionAnalysis } from '../../types/question';
 
 interface AnalysisHeaderProps {
   paper: QuestionPaper;
+  questions: QuestionAnalysis[];
 }
 
-export const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({ paper }) => {
+export const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({ paper, questions }) => {
   const navigate = useNavigate();
 
   const handlePrintPDF = () => {
@@ -20,15 +22,17 @@ export const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({ paper }) => {
   };
 
   const handleExportJSON = () => {
-    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(paper, null, 2)
-    )}`;
+    const exportBlob = new Blob([JSON.stringify({ paper, questions }, null, 2)], {
+      type: 'application/json',
+    });
+    const downloadUrl = URL.createObjectURL(exportBlob);
     const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', jsonString);
+    downloadAnchor.setAttribute('href', downloadUrl);
     downloadAnchor.setAttribute('download', `BloomLens_Report_${paper.subject_code}_${paper.id}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    URL.revokeObjectURL(downloadUrl);
     toast.success(`Exported analytical report for ${paper.subject_code}`);
   };
 

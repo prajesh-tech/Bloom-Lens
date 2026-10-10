@@ -14,6 +14,7 @@ import { useAnalysisResultQueries, usePatchQuestionMutation } from '../services/
 import { BloomLevel } from '../types/bloom';
 import { QuestionAnalysis, QuestionPatchPayload } from '../types/question';
 import { BloomDistributionItem } from '../types/analytics';
+import { getBloomCode } from '../config/bloomConfig';
 
 const EMPTY_QUESTIONS: QuestionAnalysis[] = [];
 
@@ -34,6 +35,8 @@ export const AnalysisResults: React.FC = () => {
 
   // Combined Search + Bloom Filter Logic
   const filteredQuestions = useMemo(() => {
+    const targetBloomCode = getBloomCode(selectedBloom);
+
     return questions.filter((q) => {
       // 1. Text or Question ID Search (case-insensitive)
       const qText = q.original_text.toLowerCase();
@@ -43,14 +46,19 @@ export const AnalysisResults: React.FC = () => {
 
       // 2. Bloom Level Filter
       const effLevel = (q.effective_bloom_level || q.ai_bloom_level || '').toUpperCase();
-      const targetBloom = selectedBloom.toUpperCase();
-      const matchesBloom = selectedBloom === 'ALL' || effLevel === targetBloom || effLevel.startsWith(targetBloom);
+      const effBloomCode = getBloomCode(effLevel);
+      const matchesBloom =
+        selectedBloom === 'ALL' ||
+        (effBloomCode !== undefined && effBloomCode === targetBloomCode);
 
       return matchesSearch && matchesBloom;
     });
   }, [questions, searchQuery, selectedBloom]);
 
-  // Paper-specific Bloom Distributions computed directly from paper questions
+  // Paper-specific Bloom Distributions computed from leaf questions only.
+  // Leaf questions are those with no sub_questions (i.e. not parent containers).
+  // This prevents double-counting marks when parents and their children are both
+  // present in the flat questions list returned by the API.
   const paperBloomDistributions = useMemo<BloomDistributionItem[]>(() => {
     const levels: { code: string; name: BloomLevel }[] = [
       { code: 'L1', name: 'Remember' },
@@ -61,13 +69,26 @@ export const AnalysisResults: React.FC = () => {
       { code: 'L6', name: 'Create' },
     ];
 
-    const totalQ = questions.length;
-    const totalM = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
+    // Collect IDs that are referenced as parent by any other question
+    const parentIds = new Set<number>();
+    questions.forEach((q) => {
+      if (q.parent_question_id != null) parentIds.add(q.parent_question_id);
+    });
+
+    // Leaf = not a parent AND has no populated sub_questions array
+    const leafQuestions = questions.filter(
+      (q) =>
+        !parentIds.has(q.id) &&
+        (!q.sub_questions || q.sub_questions.length === 0)
+    );
+
+    const totalQ = leafQuestions.length;
+    const totalM = leafQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
 
     const counts: Record<string, number> = { L1: 0, L2: 0, L3: 0, L4: 0, L5: 0, L6: 0 };
     const marksSum: Record<string, number> = { L1: 0, L2: 0, L3: 0, L4: 0, L5: 0, L6: 0 };
 
-    questions.forEach((q) => {
+    leafQuestions.forEach((q) => {
       const lvlStr = (q.effective_bloom_level || q.ai_bloom_level || '').toUpperCase();
       let code = 'L1';
       if (lvlStr.includes('UNDERSTAND') || lvlStr === 'L2') code = 'L2';
@@ -121,7 +142,7 @@ export const AnalysisResults: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in">
       {/* Header */}
-      <AnalysisHeader paper={paper} />
+      <AnalysisHeader paper={paper} questions={questions} />
 
       {/* Summary Stat Cards */}
       <SummaryCards paper={paper} questionCount={questions.length} />
@@ -136,7 +157,7 @@ export const AnalysisResults: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Bloom Level Question Distribution</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">Cognitive level breakdown across paper questions</p>
           </div>
-          <BloomDonutChart data={paperBloomDistributions} totalQuestions={questions.length} />
+          <BloomDonutChart data={paperBloomDistributions} />
         </Card>
 
         <Card className="space-y-4">
