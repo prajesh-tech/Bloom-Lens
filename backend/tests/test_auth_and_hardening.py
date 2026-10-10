@@ -2,9 +2,12 @@ import os
 import tempfile
 import asyncio
 import threading
+import zipfile
+from io import BytesIO
 import pytest
 from unittest.mock import patch, MagicMock
 from httpx import AsyncClient
+from fastapi import HTTPException, UploadFile
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +19,7 @@ from app.models.topic import Topic, QuestionTopic
 from app.services.embedding_service import get_embedding_model, get_fallback_vectorizer, EmbeddingService
 from app.services.ocr_service import get_ocr_engine
 from app.services.bloom_service import _get_anchor_vectors, BloomService
-from app.utils.validators import safe_filename, validate_paper_upload
+from app.utils.validators import safe_filename, validate_paper_upload, read_and_validate_upload
 
 
 @pytest.mark.asyncio
@@ -91,6 +94,42 @@ async def test_safe_filename_preserves_extension():
     cleaned_docx = safe_filename(long_docx)
     assert cleaned_docx.endswith(".docx")
     assert len(cleaned_docx) <= 180
+
+
+@pytest.mark.asyncio
+async def test_pdf_page_limit_is_enforced(monkeypatch):
+    import fitz
+
+    document = fitz.open()
+    document.new_page()
+    document.new_page()
+    content = document.tobytes()
+    document.close()
+    monkeypatch.setattr(settings, "MAX_DOCUMENT_PAGES", 1)
+    upload = UploadFile(file=BytesIO(content), filename="many-pages.pdf")
+
+    with pytest.raises(HTTPException) as error:
+        await read_and_validate_upload(upload, 100, "Mid-Term")
+
+    assert error.value.status_code == 413
+    assert error.value.detail["error_code"] == "TooManyDocumentPages"
+
+
+@pytest.mark.asyncio
+async def test_docx_expanded_size_limit_is_enforced(monkeypatch):
+    archive_buffer = BytesIO()
+    with zipfile.ZipFile(archive_buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", "types")
+        archive.writestr("word/document.xml", "x" * (2 * 1024 * 1024))
+
+    monkeypatch.setattr(settings, "MAX_DOCX_UNCOMPRESSED_SIZE_MB", 1)
+    upload = UploadFile(file=BytesIO(archive_buffer.getvalue()), filename="large.docx")
+
+    with pytest.raises(HTTPException) as error:
+        await read_and_validate_upload(upload, 100, "Mid-Term")
+
+    assert error.value.status_code == 413
+    assert error.value.detail["error_code"] == "DocxExpandedFileTooLarge"
 
 
 @pytest.mark.asyncio

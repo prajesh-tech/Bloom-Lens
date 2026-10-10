@@ -101,6 +101,12 @@ async def upload_question_paper(
 
         # 6. Extract questions & marks using threadpool
         raw_questions = await asyncio.to_thread(QuestionExtractionService.extract_questions, full_text)
+        if len(raw_questions) > settings.MAX_EXTRACTED_QUESTIONS:
+            raise_api_error(
+                getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
+                "TooManyExtractedQuestions",
+                f"Document contains more than the maximum allowed {settings.MAX_EXTRACTED_QUESTIONS} questions.",
+            )
         paper.extraction_status = "SUCCESS" if raw_questions else "FAILED"
         paper.processing_status = "ANALYZING"
 
@@ -121,10 +127,15 @@ async def upload_question_paper(
             return unit_val, topic_name, topic_conf, q_type, bloom_res
 
         q_texts = [sanitize_display_text(q["original_text"]) for q in raw_questions]
-        classification_results = await asyncio.gather(*[
-            asyncio.to_thread(_classify_question, q_text, subject.name)
-            for q_text in q_texts
-        ])
+        classification_limit = asyncio.Semaphore(settings.MAX_PARALLEL_QUESTION_CLASSIFICATIONS)
+
+        async def classify_question(q_text: str):
+            async with classification_limit:
+                return await asyncio.to_thread(_classify_question, q_text, subject.name)
+
+        classification_results = await asyncio.gather(
+            *(classify_question(q_text) for q_text in q_texts)
+        )
 
         # Fix 4: Pre-load ALL existing topics for this subject into a local dict.
         #        Eliminates the N×(SELECT + optional INSERT + flush) pattern from the loop.
@@ -312,6 +323,14 @@ async def upload_question_paper(
             total_questions=len(created_questions),
         )
 
+    except HTTPException:
+        await db.rollback()
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as rm_err:
+                logger.warning(f"Failed to delete rejected upload file {file_path}: {rm_err}")
+        raise
     except Exception as e:
         logger.error(f"Failed processing question paper upload: {e}")
         await db.rollback()

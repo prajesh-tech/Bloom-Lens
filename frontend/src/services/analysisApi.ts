@@ -53,6 +53,7 @@ export const analysisApi = {
 
     const { data } = await apiClient.post<QuestionPaper>('/papers/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 10 * 60 * 1000,
     });
     return data;
   },
@@ -191,4 +192,3 @@ export const analysisApi = {
     return data;
   },
 };
-

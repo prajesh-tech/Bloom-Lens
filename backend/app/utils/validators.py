@@ -73,7 +73,7 @@ def validate_paper_upload(
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     if file_size > max_bytes:
         raise_api_error(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
             "FileTooLarge",
             f"File size exceeds maximum allowed limit of {settings.MAX_UPLOAD_SIZE_MB} MB.",
         )
@@ -95,7 +95,7 @@ async def read_and_validate_upload(file: UploadFile, maximum_marks: float, exami
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     if len(content) > max_bytes:
         raise_api_error(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
             "FileTooLarge",
             f"File size exceeds maximum allowed limit of {settings.MAX_UPLOAD_SIZE_MB} MB.",
         )
@@ -103,17 +103,53 @@ async def read_and_validate_upload(file: UploadFile, maximum_marks: float, exami
     if ext == ".pdf" and not content.startswith(b"%PDF-"):
         raise_api_error(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "InvalidFileSignature", "PDF content signature is invalid.")
 
+    if ext == ".pdf":
+        try:
+            import fitz
+            with fitz.open(stream=content, filetype="pdf") as document:
+                if document.page_count > settings.MAX_DOCUMENT_PAGES:
+                    raise_api_error(
+                        getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
+                        "TooManyDocumentPages",
+                        f"PDF exceeds the maximum allowed page count of {settings.MAX_DOCUMENT_PAGES}.",
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            raise_api_error(
+                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                "InvalidPdf",
+                "Uploaded PDF could not be parsed.",
+            )
+
     if ext == ".docx":
         try:
             with zipfile.ZipFile(BytesIO(content)) as archive:
-                names = set(archive.namelist())
+                entries = archive.infolist()
+                names = {entry.filename for entry in entries}
                 if "[Content_Types].xml" not in names or "word/document.xml" not in names:
                     raise zipfile.BadZipFile
+                expanded_size = sum(entry.file_size for entry in entries)
+                max_expanded_bytes = settings.MAX_DOCX_UNCOMPRESSED_SIZE_MB * 1024 * 1024
+                if expanded_size > max_expanded_bytes:
+                    raise_api_error(
+                        getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
+                        "DocxExpandedFileTooLarge",
+                        "DOCX expands beyond the maximum allowed uncompressed size.",
+                    )
+        except HTTPException:
+            raise
         except zipfile.BadZipFile:
             raise_api_error(
                 status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 "InvalidFileSignature",
                 "DOCX content signature is invalid.",
+            )
+        except Exception:
+            raise_api_error(
+                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                "InvalidDocx",
+                "Uploaded DOCX could not be parsed.",
             )
 
     await file.seek(0)

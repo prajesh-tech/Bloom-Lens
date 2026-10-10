@@ -24,14 +24,9 @@ export class ApiError extends Error {
   }
 }
 
-const API_KEY = import.meta.env.VITE_API_KEY;
-
 export const apiClient = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
-  headers: {
-    'Content-Type': 'application/json',
-    ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
-  },
+  headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 });
 

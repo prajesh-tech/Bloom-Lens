@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # File Storage Settings
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 20
+    MAX_DOCX_UNCOMPRESSED_SIZE_MB: int = 100
+    MAX_DOCUMENT_PAGES: int = 100
+    MAX_EXTRACTED_QUESTIONS: int = 500
+    MAX_PARALLEL_QUESTION_CLASSIFICATIONS: int = 4
     ALLOWED_EXTENSIONS: List[str] = [".pdf", ".docx"]
 
     # Hybrid Bloom Classifier Parameters & Weights
@@ -100,6 +104,14 @@ class Settings(BaseSettings):
             missing.append("DATABASE_URL")
         if self.MAX_UPLOAD_SIZE_MB <= 0:
             missing.append("MAX_UPLOAD_SIZE_MB")
+        if self.MAX_DOCX_UNCOMPRESSED_SIZE_MB <= 0:
+            missing.append("MAX_DOCX_UNCOMPRESSED_SIZE_MB")
+        if self.MAX_DOCUMENT_PAGES <= 0:
+            missing.append("MAX_DOCUMENT_PAGES")
+        if self.MAX_EXTRACTED_QUESTIONS <= 0:
+            missing.append("MAX_EXTRACTED_QUESTIONS")
+        if self.MAX_PARALLEL_QUESTION_CLASSIFICATIONS <= 0:
+            missing.append("MAX_PARALLEL_QUESTION_CLASSIFICATIONS")
 
         env = self.APP_ENV.lower()
         key_missing = not self.GEMINI_API_KEY or self.GEMINI_API_KEY == "your_gemini_api_key_here"
