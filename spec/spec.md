@@ -24,10 +24,10 @@ This document details the technical requirements, constraints, API specification
 
 ## 2. API Contract & Security Specification
 
-All routes are served under `/api/v1`. Sensitive write and analytics endpoints require authentication via `X-API-Key: <key>` header or `Authorization: Bearer <key>`.
+All routes are served under `/api/v1`. Sensitive write and analytics endpoints require backend authentication when enabled, via `X-API-Key` or a Bearer credential. Shared API keys are server credentials and must never be included in frontend `VITE_` variables; protected browser actions require a trusted server-side integration.
 
 ### Authentication & Authorization
-- **Dependency**: `get_current_user` in [`app/core/auth.py`](file:///home/Prajesh/sp/backend/app/core/auth.py).
+- **Dependency**: `get_current_user` in [`app/core/auth.py`](../backend/app/core/auth.py).
 - **Status Codes**: Returns `401 Unauthorized` for missing/invalid keys; `403 Forbidden` for insufficient role permissions.
 
 ### System Health (Public)

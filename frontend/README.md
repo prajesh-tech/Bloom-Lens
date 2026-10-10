@@ -78,7 +78,7 @@ frontend/
 ├── tests/                      # Vitest component test suite
 ├── .env.example
 ├── README.md
-├── ARCHITECTURE.md
+├── ARCHITECTURE.md             # Frontend-specific architecture
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
@@ -124,15 +124,14 @@ Configure environment variables in `.env`:
 # Base URL of the BloomLens FastAPI backend
 VITE_API_BASE_URL=http://localhost:8000
 
-# Optional API key for authenticated backend endpoints (must match backend API_KEY)
-VITE_API_KEY=bloomlens-dev-secret-key-change-in-production
-
 # Controls whether mock API mode with simulated network latency (1.5s-2.5s) is active
 # Set to 'true' for standalone demo mode or 'false' for real backend API connection
 VITE_USE_MOCK_API=true
 ```
 
-> **Note**: Variables prefixed with `VITE_` are bundled into client-side code during build. For production deployments with authentication enabled, set `VITE_API_KEY` to the authorized client API key.
+> **Security**: Do not configure a shared API key in a `VITE_` variable; Vite bundles these values into public client code. The browser does not send server API keys. When backend authentication is enabled, protected actions require a trusted server-side integration. For local development only, backend authentication may be disabled.
+
+The server enforces upload limits using `MAX_UPLOAD_SIZE_MB`, `MAX_DOCX_UNCOMPRESSED_SIZE_MB`, `MAX_DOCUMENT_PAGES`, and `MAX_EXTRACTED_QUESTIONS`. The backend also limits concurrent question classification with `MAX_PARALLEL_QUESTION_CLASSIFICATIONS`; configure these server-side values to match deployment capacity.
 
 ---
 
@@ -266,23 +265,21 @@ npm run lint
 - Human-in-the-loop overrides & review workflows
 
 ### Excluded (Reserved for V2)
-- Course Outcomes (COs)
+- Automated Course Outcome mapping and analytics (course and outcome CRUD foundations are implemented)
 - CO-PO mapping matrices
 - Student attainment analytics
 - Automatic question generation
 
 ---
 
----
-
 ## Documentation & Contribution Reference
 
-For guides on how to setup, run, and modify this project:
-- **System Design & Architecture**: [`design.md`](file:///home/Prajesh/sp/design.md)
-- **Developer Contribution Guide**: [`user_contributions.md`](file:///home/Prajesh/sp/user_contributions.md)
-- **Technical Specification**: [`spec/spec.md`](file:///home/Prajesh/sp/spec/spec.md)
-- **Operational Tasks & Roadmap**: [`spec/plan.md`](file:///home/Prajesh/sp/spec/plan.md) and [`spec/tasks.md`](file:///home/Prajesh/sp/spec/tasks.md)
-- **Skills Matrix**: [`spec/skills.md`](file:///home/Prajesh/sp/spec/skills.md)
+For guides on how to set up, run, and modify this project:
+- **System Design & Architecture**: [`design.md`](../design.md)
+- **Developer Contribution Guide**: [`user_contributions.md`](../user_contributions.md)
+- **Technical Specification**: [`spec/spec.md`](../spec/spec.md)
+- **Operational Tasks & Roadmap**: [`spec/plan.md`](../spec/plan.md) and [`spec/tasks.md`](../spec/tasks.md)
+- **Skills Matrix**: [`spec/skills.md`](../spec/skills.md)
 
 ---
 

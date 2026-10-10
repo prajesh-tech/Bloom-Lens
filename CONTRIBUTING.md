@@ -26,19 +26,19 @@ This document outlines the workflow, development environment setup, coding conve
 
 ## Code of Conduct
 
-All contributors and maintainers are expected to follow our [Code of Conduct](file:///home/Prajesh/sp/CODE_OF_CONDUCT.md). Please read it before participating.
+All contributors and maintainers are expected to follow our [Code of Conduct](./CODE_OF_CONDUCT.md). Please read it before participating.
 
 ---
 
 ## How Can I Contribute?
 
 - **Bug Fixes**: Resolve open issues on GitHub or fix edge cases in question extraction/classification.
-- **Feature Enhancements**: Contribute improvements aligned with the V1 scope (see [`backend/README.md`](file:///home/Prajesh/sp/backend/README.md) and [`spec/plan.md`](file:///home/Prajesh/sp/spec/plan.md)).
+- **Feature Enhancements**: Contribute improvements aligned with the V1 scope (see [`backend/README.md`](./backend/README.md) and [`spec/plan.md`](./spec/plan.md)).
 - **Documentation**: Improve code comments, docstrings, API specifications, and setup instructions.
 - **Testing**: Add test cases for complex question structures, ambiguous Bloom taxonomy verbs, and frontend components.
 
 > [!NOTE]
-> Note the V1 / V2 scope boundary: Course Outcomes (COs), student predictive analytics, and automated paper generation are out of scope for V1.
+> Note the V1 / V2 scope boundary: automated Course Outcome mapping and analytics, empirical student prediction, and automated paper generation remain out of scope. Course and outcome CRUD foundations are already present.
 
 ---
 
@@ -75,13 +75,12 @@ All contributors and maintainers are expected to follow our [Code of Conduct](fi
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` to configure your local keys and database URL:
+   Configure the backend for local development:
    ```env
    DATABASE_URL=sqlite+aiosqlite:///./bloomlens.db
-   GEMINI_API_KEY=your_gemini_api_key_here
-   API_KEY=bloomlens-dev-secret-key-change-in-production
-   AUTH_ENABLED=true
+   AUTH_ENABLED=false
    ```
+   Authentication may be disabled for local development only. Never put a backend API key in a `VITE_` variable; browser code is public.
 
 5. **Run database migrations**:
    ```bash
@@ -116,9 +115,9 @@ All contributors and maintainers are expected to follow our [Code of Conduct](fi
    Verify the configuration:
    ```env
    VITE_API_BASE_URL=http://localhost:8000
-   VITE_API_KEY=bloomlens-dev-secret-key-change-in-production
    VITE_USE_MOCK_API=false
    ```
+   The frontend intentionally does not send a shared API key. Protected actions require a trusted server-side integration when backend authentication is enabled.
 
 4. **Start the development server**:
    ```bash
@@ -143,22 +142,22 @@ All contributors and maintainers are expected to follow our [Code of Conduct](fi
 
 ## Coding Conventions & Standards
 
-For in-depth developer guidelines, consult [`user_contributions.md`](file:///home/Prajesh/sp/user_contributions.md) and [`AGENTS.md`](file:///home/Prajesh/sp/AGENTS.md).
+For in-depth developer guidelines, consult [`user_contributions.md`](./user_contributions.md) and [`AGENTS.md`](./AGENTS.md).
 
 ### Backend Conventions
-- **Configuration**: Use Pydantic `BaseSettings` defined in [`backend/app/core/config.py`](file:///home/Prajesh/sp/backend/app/core/config.py). Never hardcode parameters or secrets.
+- **Configuration**: Use Pydantic `BaseSettings` defined in [`backend/app/core/config.py`](./backend/app/core/config.py). Never hardcode parameters or secrets.
 - **Database Transactions**: Sessions yielded by `get_db()` do NOT auto-commit and roll back on exceptions. Mutating endpoints must explicitly call `await db.commit()`.
-- **Authentication**: Protect state-mutating and analytics endpoints with FastAPI dependency-based auth (`get_current_user` in [`backend/app/core/auth.py`](file:///home/Prajesh/sp/backend/app/core/auth.py)).
+- **Authentication**: Protect state-mutating and analytics endpoints with FastAPI dependency-based auth (`get_current_user` in [`backend/app/core/auth.py`](./backend/app/core/auth.py)).
 - **Concurrency**: Guard ML model and vector index lazy singletons with thread-safe double-checked locks (`threading.Lock`).
-- **Error Handling**: Use structured exceptions from [`backend/app/core/errors.py`](file:///home/Prajesh/sp/backend/app/core/errors.py) to return consistent error payloads.
+- **Error Handling**: Use structured exceptions from [`backend/app/core/errors.py`](./backend/app/core/errors.py) to return consistent error payloads.
 
 ### Frontend Conventions
-- **React Query**: Manage server state with queries and mutations in [`frontend/src/services/queries.ts`](file:///home/Prajesh/sp/frontend/src/services/queries.ts). Invalidate query caches on mutation success.
+- **React Query**: Manage server state with queries and mutations in [`frontend/src/services/queries.ts`](./frontend/src/services/queries.ts). Invalidate query caches on mutation success.
 - **Error Handling**: Surface structured errors with `ApiError` and display user-friendly notifications via `sonner` toasts.
 - **UI & Styling**: Use Tailwind CSS utility classes adhering to the project's slate palette and typography tokens.
 
 ### Database Migrations
-When altering database models in [`backend/app/models/`](file:///home/Prajesh/sp/backend/app/models/):
+When altering database models in [`backend/app/models/`](./backend/app/models):
 ```bash
 cd backend
 source .venv/bin/activate
@@ -188,6 +187,6 @@ npm run build
 
 ## Reporting Bugs & Requesting Features
 
-- **Bug Reports**: Use the [Bug Report Template](file:///home/Prajesh/sp/.github/ISSUE_TEMPLATE/bug_report.md) on GitHub. Include reproduction steps, sample paper formats (if applicable), and error traces.
-- **Feature Requests**: Use the [Feature Request Template](file:///home/Prajesh/sp/.github/ISSUE_TEMPLATE/feature_request.md). Explain the context, motivation, and proposed solution.
-- **Security Vulnerabilities**: Refer to [SECURITY.md](file:///home/Prajesh/sp/SECURITY.md) for private disclosure instructions. Do not report security issues in public issues.
+- **Bug Reports**: Use the [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md) on GitHub. Include reproduction steps, sample paper formats (if applicable), and error traces.
+- **Feature Requests**: Use the [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md). Explain the context, motivation, and proposed solution.
+- **Security Vulnerabilities**: Refer to [SECURITY.md](./SECURITY.md) for private disclosure instructions. Do not report security issues in public issues.

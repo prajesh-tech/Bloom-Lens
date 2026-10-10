@@ -102,12 +102,13 @@ DATABASE_URL=sqlite+aiosqlite:///./bloomlens.db
 # For MySQL 8: mysql+pymysql://user:password@localhost:3306/bloomlens
 
 GEMINI_API_KEY=your_google_gemini_api_key
-API_KEY=your_bloomlens_api_key_here
-AUTH_ENABLED=true
+AUTH_ENABLED=false
 
 UPLOAD_DIR=uploads
 BLOOM_VERIFICATION_THRESHOLD=0.80
 ```
+
+The example disables authentication for local development. In deployed environments, keep `API_KEY` server-side and enable authentication only for trusted server integrations; never configure the key as a frontend `VITE_` variable.
 
 ### 4. Database Migrations
 Run Alembic migrations to create tables and seed Bloom taxonomy levels (L1–L6):
@@ -171,9 +172,10 @@ The test suite covers:
 - Human-in-the-loop overrides & review workflows
 - API key authentication & secure role-based authorization hook
 
-### Strictly Excluded (Reserved for V2)
-- Course Outcomes (COs)
-- CO extraction, mapping, or attainment matrices
+### Excluded (Reserved for V2)
+- Automated Course Outcome mapping and analytics (course and outcome CRUD foundations are implemented)
+- CO-PO mapping matrices
+- Student attainment analytics
 - Student performance prediction
 - Automatic question paper generation or exam prediction
 
@@ -181,10 +183,9 @@ The test suite covers:
 
 ## Documentation & Contribution Reference
 
-For guides on how to setup, run, and modify this project:
-- **System Design & Architecture**: [`design.md`](file:///home/Prajesh/sp/design.md)
-- **Developer Contribution Guide**: [`user_contributions.md`](file:///home/Prajesh/sp/user_contributions.md)
-- **Technical Specification**: [`spec/spec.md`](file:///home/Prajesh/sp/spec/spec.md)
-- **Operational Tasks & Roadmap**: [`spec/plan.md`](file:///home/Prajesh/sp/spec/plan.md) and [`spec/tasks.md`](file:///home/Prajesh/sp/spec/tasks.md)
-- **Skills Matrix**: [`spec/skills.md`](file:///home/Prajesh/sp/spec/skills.md)
-
+For guides on how to set up, run, and modify this project:
+- **System Design & Architecture**: [`design.md`](../design.md)
+- **Developer Contribution Guide**: [`CONTRIBUTING.md`](../CONTRIBUTING.md)
+- **Technical Specification**: [`spec/spec.md`](../spec/spec.md)
+- **Operational Tasks & Roadmap**: [`spec/plan.md`](../spec/plan.md) and [`spec/tasks.md`](../spec/tasks.md)
+- **Skills Matrix**: [`spec/skills.md`](../spec/skills.md)

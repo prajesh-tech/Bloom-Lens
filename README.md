@@ -4,7 +4,7 @@
 
 **AI-Powered Historical Question-Paper Analysis & Cognitive Level Evaluation System**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](file:///home/Prajesh/sp/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB.svg)](https://react.dev/)
@@ -155,15 +155,15 @@ npm run build
 
 ## Documentation Links
 
-- **Architecture & Pipeline**: [System Design (`design.md`)](file:///home/Prajesh/sp/design.md)
-- **Technical Specification**: [API & Model Spec (`spec/spec.md`)](file:///home/Prajesh/sp/spec/spec.md)
-- **Roadmap & Plan**: [V1/V2 Milestones (`spec/plan.md`)](file:///home/Prajesh/sp/spec/plan.md)
-- **Contributing**: [Contribution Guidelines (`CONTRIBUTING.md`)](file:///home/Prajesh/sp/CONTRIBUTING.md)
-- **Code of Conduct**: [Code of Conduct (`CODE_OF_CONDUCT.md`)](file:///home/Prajesh/sp/CODE_OF_CONDUCT.md)
-- **Security**: [Security Policy (`SECURITY.md`)](file:///home/Prajesh/sp/SECURITY.md)
+- **Architecture & Pipeline**: [System Design (`design.md`)](./design.md)
+- **Technical Specification**: [API & Model Spec (`spec/spec.md`)](./spec/spec.md)
+- **Roadmap & Plan**: [V1/V2 Milestones (`spec/plan.md`)](./spec/plan.md)
+- **Contributing**: [Contribution Guidelines (`CONTRIBUTING.md`)](./CONTRIBUTING.md)
+- **Code of Conduct**: [Code of Conduct (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md)
+- **Security**: [Security Policy (`SECURITY.md`)](./SECURITY.md)
 
 ---
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](file:///home/Prajesh/sp/LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.

@@ -32,9 +32,9 @@ The status of the core deliverables in the current release is tracked below:
 
 ---
 
-## 2. V2 Course Outcomes & CO Analytics Backlog & Status
+## 2. Course Outcomes & CO Analytics Backlog & Status
 
-The implementation status for the V2 Course Outcomes roadmap is tracked below:
+Course and course-outcome models and management APIs have been implemented. Automated outcome mapping, import, and analytics remain future work.
 
 | Phase | Feature / Task | Component | Status |
 | --- | --- | --- | --- |
@@ -83,14 +83,14 @@ To keep the application stable, developers should regularly execute these action
 
 Before deploying a release build, the following quality checks must run successfully:
 
-1. **Verify Backend Tests** (35 tests):
+1. **Verify Backend Tests**:
    ```bash
    cd backend
    pytest tests/ -v
    ```
    *Ensures all document extractions, Bloom classification, authentication, transactions, cleanup, and similarity matching tests pass.*
 
-2. **Verify Frontend Quality Controls** (12 tests):
+2. **Verify Frontend Quality Controls**:
    ```bash
    cd frontend
    npm run type-check   # Validate TypeScript types

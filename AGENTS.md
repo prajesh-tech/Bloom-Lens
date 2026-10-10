@@ -100,7 +100,8 @@ If a sandbox or environment problem prevents a command from running, say so plai
 
 | Document | Purpose |
 |----------|---------|
-| [`user_contributions.md`](./user_contributions.md) | Onboarding, setup, style rules |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Canonical onboarding, setup, and contribution guidelines |
+| [`user_contributions.md`](./user_contributions.md) | Compatibility pointer to the canonical developer guide |
 | [`design.md`](./design.md) | System diagrams, pipeline flows |
 | [`spec/spec.md`](./spec/spec.md) | API contract, models |
 | [`spec/plan.md`](./spec/plan.md) | Milestones, V1/V2 scope boundaries |

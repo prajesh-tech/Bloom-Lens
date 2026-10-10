@@ -42,7 +42,7 @@ The development of BloomLens is structured into four sequential phases:
 |  - DB Transaction Integrity        |
 |  - Failed Upload File Disk Cleanup |
 |  - Single-Query Analytics (No N+1) |
-|  - 35 Pytest & 12 Vitest suites    |
+| - Comprehensive backend and frontend test suites |
 |  - Frontend TS type-check & builds |
 +------------------------------------+
 ```
@@ -69,7 +69,7 @@ To maintain focus and deliver a stable initial version, boundaries have been est
 - **Security & Reliability Hardening**: API key authentication, bounded Gemini timeouts, thread-safe model caching, explicit database transactions, and disk cleanup.
 
 ### Excluded (Reserved for V2 Milestone)
-- **Course Outcomes (COs) Mapping**: Linking specific questions to Course Outcomes (COs) or Program Outcomes (POs).
+- **Automated Course Outcome Mapping & Analytics**: Mapping questions to Course Outcomes (COs) or Program Outcomes (POs), importing outcomes, and computing attainment analytics. Course and course-outcome CRUD foundations are implemented; automated mapping and analytics remain future work.
 - **Attainment Matrices**: Automatically computing academic attainment charts or matrices based on examination results.
 - **Student Performance Models (Empirical/Cohort)**: Full empirical student response modeling, actual student marks/cohort records, and evaluator factor modeling.
 - **Automatic Exam Paper Generation**: AI-driven generation of new question papers or prediction of future exam questions.
