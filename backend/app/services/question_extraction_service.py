@@ -86,7 +86,10 @@ class QuestionExtractionService:
                     current_block["choice_group"] = current_choice_group
                 continue
 
-            # Check section header with mark distribution e.g. [5Q*1M=5 Marks], [2Q*2.5M=5 Marks]
+            # Check section header with mark distribution.
+            # Handles both:
+            #   [5Q*2M=10 Marks]  → per-question value is group(1)
+            #   [5*2=10 Marks]    → per-question value is group(2) (the second factor)
             sec_marks_match = re.search(
                 r"\[?\s*\d+\s*Q\s*[*xX×]\s*(\d+(?:\.\d+)?)\s*M(?:arks)?",
                 line,
@@ -96,9 +99,35 @@ class QuestionExtractionService:
                 current_section_marks = float(sec_marks_match.group(1))
                 continue
 
+            # Fallback: plain "N*M=Total Marks" or "N×M=Total Marks" in section headers
+            sec_marks_plain = re.search(
+                r"\b(\d+)\s*[*xX×]\s*(\d+(?:\.\d+)?)\s*=\s*\d+(?:\.\d+)?\s*Marks?\b",
+                line,
+                re.IGNORECASE,
+            )
+            if sec_marks_plain:
+                # The second factor is the per-question mark value
+                current_section_marks = float(sec_marks_plain.group(2))
+                continue
+
             # Check for header/section markers e.g. "PART A", "SECTION 1", "ALL THE BEST"
             if re.match(r"^(PART|SECTION|GROUP)\s+[A-Z0-9]+", line, re.IGNORECASE) or line.startswith("***"):
                 continue
+
+            # Skip numbered instruction/preamble lines such as:
+            #   "1.All Questions carry equal marks."
+            #   "2.All Sections are Mandatory."
+            # These start with a digit+dot and contain plain prose without CO/PO tags or known question verbs.
+            preamble_match = re.match(r"^\d{1,2}[\.)\s]", line)
+            if preamble_match:
+                first_word_after = line[preamble_match.end():].split()[0].lower().rstrip(":,.()") if line[preamble_match.end():].split() else ""
+                has_co_po_tag = bool(re.search(r"\[CO\d+", line, re.IGNORECASE))
+                is_question_verb = first_word_after in cls.QUESTION_VERBS
+                if not has_co_po_tag and not is_question_verb:
+                    # Treat as preamble/instruction, append to current block text if any
+                    if current_block:
+                        current_block["raw_lines"].append(line)
+                    continue
 
             # Check if line starts a new main or sub question
             q_num_match, is_sub, parent_num = cls._match_question_number(line)
