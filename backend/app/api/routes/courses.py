@@ -17,7 +17,7 @@ from app.schemas.course import (
 )
 from app.services.course_service import CourseService
 
-router = APIRouter(prefix="/courses", tags=["Courses"])
+router = APIRouter(prefix="/courses", tags=["Courses"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=CourseListResponse)

@@ -65,7 +65,7 @@ async def test_auth_valid_credentials_succeeds(unauthed_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_public_endpoints_accessible_without_auth(unauthed_client: AsyncClient):
-    """Health probes, root, and read-only search remain publicly accessible."""
+    """Only minimal health and root are public; private reads require authentication."""
     res_root = await unauthed_client.get("/")
     assert res_root.status_code == 200
 
@@ -73,13 +73,13 @@ async def test_public_endpoints_accessible_without_auth(unauthed_client: AsyncCl
     assert res_health.status_code == 200
 
     res_deep = await unauthed_client.get("/api/v1/health/deep")
-    assert res_deep.status_code == 200
+    assert res_deep.status_code == 401
 
     res_papers = await unauthed_client.get("/api/v1/papers")
-    assert res_papers.status_code == 200
+    assert res_papers.status_code == 401
 
     res_questions = await unauthed_client.get("/api/v1/questions")
-    assert res_questions.status_code == 200
+    assert res_questions.status_code == 401
 
 
 @pytest.mark.asyncio

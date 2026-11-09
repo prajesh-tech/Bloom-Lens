@@ -1,3 +1,4 @@
+from app.utils.search import escape_like
 from typing import List, Optional, Tuple
 from fastapi import HTTPException, status
 from sqlalchemy import select, func, or_, delete
@@ -48,24 +49,24 @@ class CourseService:
         )
 
         if search:
-            search_term = f"%{search.strip()}%"
+            search_term = f"%{escape_like(search.strip())}%"
             query = query.where(
                 or_(
-                    Course.course_code.ilike(search_term),
-                    Course.course_name.ilike(search_term),
-                    Course.description.ilike(search_term),
+                    Course.course_code.ilike(search_term, escape="\\"),
+                    Course.course_name.ilike(search_term, escape="\\"),
+                    Course.description.ilike(search_term, escape="\\"),
                 )
             )
 
         # Count total
         count_stmt = select(func.count(Course.id))
         if search:
-            search_term = f"%{search.strip()}%"
+            search_term = f"%{escape_like(search.strip())}%"
             count_stmt = count_stmt.where(
                 or_(
-                    Course.course_code.ilike(search_term),
-                    Course.course_name.ilike(search_term),
-                    Course.description.ilike(search_term),
+                    Course.course_code.ilike(search_term, escape="\\"),
+                    Course.course_name.ilike(search_term, escape="\\"),
+                    Course.description.ilike(search_term, escape="\\"),
                 )
             )
         total = (await db.execute(count_stmt)).scalar() or 0

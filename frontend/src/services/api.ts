@@ -1,6 +1,9 @@
 import axios from 'axios';
+import { queryClient } from './queryClient';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+let csrfToken: string | null = null;
+export const setCsrfToken = (token: string | null) => { csrfToken = token; };
 
 export interface ApiErrorBody {
   error_code?: string;
@@ -28,11 +31,23 @@ export const apiClient = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
+  withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  if (csrfToken && !['get', 'head', 'options'].includes(config.method ?? 'get')) {
+    config.headers.set('X-CSRF-Token', csrfToken);
+  }
+  return config;
 });
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      setCsrfToken(null);
+      queryClient.setQueryData(['auth', 'session'], null);
+    }
     const body = error.response?.data as ApiErrorBody | undefined;
     const detailMessage =
       typeof body?.detail === 'string'

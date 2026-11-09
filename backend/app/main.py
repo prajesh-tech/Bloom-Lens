@@ -1,5 +1,6 @@
 import time
 import uuid
+import re
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -12,7 +13,7 @@ from app.core.logging import logger
 from app.core.metrics import metrics
 from app.core.upload_limits import UploadBodyLimitMiddleware
 from app.services.paper_processing_service import fail_interrupted_jobs
-from app.api.routes import health, papers, questions, analytics, courses, course_outcomes
+from app.api.routes import health, papers, questions, analytics, courses, course_outcomes, browser_auth
 from app.services.embedding_service import get_embedding_model
 
 
@@ -55,7 +56,8 @@ app.add_middleware(
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     start_time = time.time()
-    request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+    supplied_id = request.headers.get("X-Request-ID", "")
+    request_id = supplied_id if re.fullmatch(r"[A-Za-z0-9._:-]{1,64}", supplied_id) else uuid.uuid4().hex
     response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = f"{process_time:.4f}s"
@@ -76,6 +78,7 @@ async def add_process_time_header(request: Request, call_next):
 
 # Register API Router Endpoints under /api/v1
 api_v1_prefix = settings.API_V1_STR
+app.include_router(browser_auth.router, prefix=api_v1_prefix)
 app.include_router(health.router, prefix=api_v1_prefix)
 app.include_router(papers.router, prefix=api_v1_prefix)
 app.include_router(questions.router, prefix=api_v1_prefix)

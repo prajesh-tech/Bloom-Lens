@@ -7,6 +7,7 @@ from app.models.question_similarity import QuestionSimilarity
 from app.models.course import Course
 from app.models.course_outcome import CourseOutcome
 from app.models.question_course_outcome import QuestionCourseOutcome
+from app.models.reviewer import Reviewer, ReviewerSession, QuestionRevision
 
 __all__ = [
     "Subject",

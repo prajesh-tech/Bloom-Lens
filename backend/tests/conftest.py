@@ -29,6 +29,8 @@ async def setup_test_db(monkeypatch):
     from app.core.upload_limits import upload_limiter
     monkeypatch.setattr(paper_processing_service, "AsyncSessionLocal", TestAsyncSessionLocal)
     upload_limiter.entries.clear()
+    from app.api.routes.browser_auth import login_limiter
+    login_limiter.entries.clear()
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

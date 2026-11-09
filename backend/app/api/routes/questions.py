@@ -20,8 +20,11 @@ from app.schemas.question import (
 )
 from app.services.bloom_service import BLOOM_LEVEL_MAP, BLOOM_NAME_MAP
 from app.utils.text_cleaner import sanitize_display_text
+from app.utils.search import escape_like
+from app.models.reviewer import QuestionRevision
+from app.schemas.reviewer import RevisionResponse
 
-router = APIRouter(prefix="/questions", tags=["Questions"])
+router = APIRouter(prefix="/questions", tags=["Questions"], dependencies=[Depends(get_current_user)])
 
 
 QUESTION_RESPONSE_OPTIONS = (
@@ -102,35 +105,35 @@ async def search_and_filter_questions(
         query = query.where(Question.question_paper_id == paper)
 
     if examination_type:
-        query = query.where(QuestionPaper.examination_type.ilike(f"%{examination_type}%"))
+        query = query.where(QuestionPaper.examination_type.ilike(f"%{escape_like(examination_type)}%", escape="\\"))
 
     if year_date:
-        query = query.where(QuestionPaper.year_date.ilike(f"%{year_date}%"))
+        query = query.where(QuestionPaper.year_date.ilike(f"%{escape_like(year_date)}%", escape="\\"))
 
     if subject:
         query = query.join(Subject, QuestionPaper.subject_id == Subject.id).where(
-            or_(Subject.code.ilike(f"%{subject}%"), Subject.name.ilike(f"%{subject}%"))
+            or_(Subject.code.ilike(f"%{escape_like(subject)}%", escape="\\"), Subject.name.ilike(f"%{escape_like(subject)}%", escape="\\"))
         )
 
     if bloom_level:
         query = query.join(BloomLevel, Question.effective_bloom_level_id == BloomLevel.id).where(
-            BloomLevel.code.ilike(bloom_level.strip())
+            BloomLevel.code.ilike(escape_like(bloom_level.strip()), escape="\\")
         )
 
     if unit:
-        query = query.where(Question.unit.ilike(f"%{unit}%"))
+        query = query.where(Question.unit.ilike(f"%{escape_like(unit)}%", escape="\\"))
 
     if marks is not None:
         query = query.where(Question.marks == marks)
 
     if question_type:
-        query = query.where(Question.question_type.ilike(f"%{question_type}%"))
+        query = query.where(Question.question_type.ilike(f"%{escape_like(question_type)}%", escape="\\"))
 
     if question_text:
-        query = query.where(Question.original_text.ilike(f"%{question_text}%"))
+        query = query.where(Question.original_text.ilike(f"%{escape_like(question_text)}%", escape="\\"))
 
     if topic:
-        query = query.join(QuestionTopic).join(Topic).where(Topic.name.ilike(f"%{topic}%"))
+        query = query.join(QuestionTopic).join(Topic).where(Topic.name.ilike(f"%{escape_like(topic)}%", escape="\\"))
 
     # Count total
     total_query = select(func.count()).select_from(query.subquery())
@@ -182,6 +185,7 @@ async def override_question(
     if not q:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Question {question_id} not found.")
 
+    old_snapshot = _build_question_response(q, include_children=False).model_dump(mode="json")
     is_corrected = False
 
     if patch.question_text is not None and patch.question_text != q.original_text:
@@ -238,9 +242,19 @@ async def override_question(
     if is_corrected:
         q.review_status = "CORRECTED"
 
-    await db.commit()
+    await db.flush()
     db.expire_all()
-
-    # Re-query with loaded relations to return updated state including new topic
     updated_q = (await db.execute(stmt)).scalar_one()
+    new_snapshot = _build_question_response(updated_q, include_children=False).model_dump(mode="json")
+    if old_snapshot != new_snapshot:
+        db.add(QuestionRevision(question_id=question_id, acting_user=current_user.user_id,
+                                old_value=old_snapshot, new_value=new_snapshot))
+    await db.commit()
     return _build_question_response(updated_q)
+
+
+@router.get("/{question_id}/revisions", response_model=List[RevisionResponse], dependencies=[Depends(get_current_user)])
+async def question_revisions(question_id: int, limit: int = Query(50, ge=1, le=100), db: AsyncSession = Depends(get_db)):
+    rows = (await db.execute(select(QuestionRevision).where(QuestionRevision.question_id == question_id)
+                             .order_by(QuestionRevision.id.desc()).limit(limit))).scalars().all()
+    return [RevisionResponse.model_validate(row) for row in rows]

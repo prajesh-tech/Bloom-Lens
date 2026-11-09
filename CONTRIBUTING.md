@@ -10,9 +10,26 @@ environment mirrors these code defaults; changing them locally changes analysis
 behavior. Only `VITE_USE_MOCK_API=true` enables the standalone demo. An unset or
 false value uses the real backend. Examination types come from authenticated
 `GET /api/v1/papers/exam-types`, the same list used by upload validation.
-The browser UI currently requires `AUTH_ENABLED=false`; until the planned session
-proxy is implemented, authenticated access is for trusted server clients only.
-Never put the shared API key in browser configuration.
+The backend provides a session gateway for browser reviewers; never put the
+shared API key in browser configuration. Trusted server integrations can still
+use the configured API key. Production/staging require authentication and secure
+session cookies. The public health endpoint exposes only liveness; deep health
+and all document/course/analytics routes require authentication.
+
+After `alembic upgrade head`, provision a reviewer on the backend host with
+`python -m app.manage_reviewers alice` (optionally `--role admin`). The command
+prompts for a password of at least 12 characters; re-provisioning resets the
+password and revokes existing sessions. There is no public registration.
+Browser sessions expire after `SESSION_TTL_HOURS` (default eight), use HttpOnly
+SameSite cookies, and require a session-bound CSRF header for writes. In local
+HTTP development only, set `SESSION_COOKIE_SECURE=false`; production rejects
+that setting. The Vite development proxy forwards `/api` to port 8000. Production
+must serve frontend and `/api` on the same HTTPS origin.
+
+`GET /api/v1/questions/{id}/revisions` returns immutable, authenticated review
+history with actor, timestamp, and before/after snapshots. Migration
+`reviewers_20261109` adds reviewer, session, and revision tables. Back up these
+records before `alembic downgrade upload_jobs_20261109`, which deletes them.
 
 Uploads return HTTP 202 with the committed paper ID, `UPLOADED` status, and a
 `status_url`. Poll that endpoint for `PROCESSING`, `ANALYZING`, `COMPLETED`, or

@@ -1,7 +1,10 @@
 import secrets
 from typing import Optional, List, Callable
 from dataclasses import dataclass
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Security, status, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
+from app.core.browser_sessions import resolve_browser_session
 from fastapi.security import APIKeyHeader, HTTPBearer, HTTPAuthorizationCredentials
 from app.core.config import settings
 from app.core.logging import logger
@@ -19,6 +22,8 @@ class AuthenticatedUser:
 
 
 async def get_current_user(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
     header_key: Optional[str] = Security(_api_key_header),
     bearer_creds: Optional[HTTPAuthorizationCredentials] = Security(_bearer_auth),
 ) -> AuthenticatedUser:
@@ -33,15 +38,6 @@ async def get_current_user(
         return AuthenticatedUser(user_id="dev_user", role="admin")
 
     configured_key = settings.API_KEY
-    if not configured_key or not configured_key.strip():
-        # If AUTH_ENABLED is True but no API_KEY is set in settings, reject requests safely
-        logger.error("Authentication is enabled but API_KEY is not configured.")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed. Server API key is not configured.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
     provided_key: Optional[str] = None
     if header_key:
         provided_key = header_key.strip()
@@ -49,9 +45,15 @@ async def get_current_user(
         provided_key = bearer_creds.credentials.strip()
 
     if not provided_key:
+        user = await resolve_browser_session(request, db)
+        return AuthenticatedUser(user_id=f'reviewer:{user.id}:{user.username}', role=user.role)
+
+    if not configured_key or not configured_key.strip():
+        # If AUTH_ENABLED is True but no API_KEY is set in settings, reject requests safely
+        logger.error("Authentication is enabled but API_KEY is not configured.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authentication credentials. Provide X-API-Key header or Bearer token.",
+            detail="Authentication failed. Server API key is not configured.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

@@ -17,7 +17,7 @@ from app.services.performance_estimation_service import PerformanceEstimationSer
 from app.services.paper_processing_service import dispatcher, remove_stored_file
 from app.utils.validators import store_and_validate_upload, SUPPORTED_EXAM_TYPES
 
-router = APIRouter(prefix="/papers", tags=["Question Papers"])
+router = APIRouter(prefix="/papers", tags=["Question Papers"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/exam-types", response_model=List[str])

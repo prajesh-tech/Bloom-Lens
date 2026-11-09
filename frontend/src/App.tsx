@@ -8,6 +8,8 @@ import { AnalysisResults } from './pages/AnalysisResults';
 import { History } from './pages/History';
 import { Settings } from './pages/Settings';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { RequireSession } from './components/layout/RequireSession';
+import { Login } from './pages/Login';
 
 export const App: React.FC = () => {
   return (
@@ -15,12 +17,15 @@ export const App: React.FC = () => {
       <BrowserRouter>
         <ErrorBoundary>
           <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<RequireSession />}>
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="analyze" element={<Analyze />} />
               <Route path="analysis/:id" element={<AnalysisResults />} />
               <Route path="history" element={<History />} />
               <Route path="settings" element={<Settings />} />
+            </Route>
             </Route>
           </Routes>
         </ErrorBoundary>

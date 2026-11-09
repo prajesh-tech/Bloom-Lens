@@ -3,11 +3,20 @@ import { NavLink } from 'react-router-dom';
 import { BrainCircuit, UploadCloud, History, Settings, Home, Menu, X, Sun, Moon } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { useTheme } from '../../context/ThemeContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { authApi, BrowserSession } from '../../services/authApi';
+import { isMock as usesMock } from '../../services/mockMode';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const isMock = import.meta.env.VITE_USE_MOCK_API !== 'false';
+  const isMock = usesMock();
+  const client = useQueryClient();
+  const session = client.getQueryData<BrowserSession | null>(['auth', 'session']);
+  const logout = useMutation({ mutationFn: authApi.logout, onSuccess: () => {
+    client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+    client.setQueryData(['auth', 'session'], null);
+  } });
 
   const navItems = [
     { label: 'Overview', path: '/', icon: Home },
@@ -53,6 +62,8 @@ export const Navbar: React.FC = () => {
 
           {/* Right Header Status, Theme Toggle & Badges */}
           <div className="flex items-center gap-3">
+            {session?.csrf_token && <button onClick={() => logout.mutate()} disabled={logout.isPending}>Sign out</button>}
+            {logout.error && <span role="alert">{logout.error.message}</span>}
             {/* Desktop Dark / Light Theme Toggle Button */}
             <button
               type="button"

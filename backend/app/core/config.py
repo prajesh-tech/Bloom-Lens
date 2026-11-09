@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Authentication & Security
     API_KEY: Optional[str] = None
     AUTH_ENABLED: bool = False
+    SESSION_TTL_HOURS: int = 8
+    SESSION_COOKIE_SECURE: bool = True
+    LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
 
     # File Storage Settings
     UPLOAD_DIR: str = "uploads"
@@ -121,6 +124,12 @@ class Settings(BaseSettings):
             missing.append("MAX_PARALLEL_QUESTION_CLASSIFICATIONS")
 
         env = self.APP_ENV.lower()
+        if env in {"production", "staging"} and not self.AUTH_ENABLED:
+            missing.append("AUTH_ENABLED (must be true)")
+        if env in {"production", "staging"} and not self.SESSION_COOKIE_SECURE:
+            missing.append("SESSION_COOKIE_SECURE (must be true)")
+        if self.SESSION_TTL_HOURS <= 0 or self.LOGIN_RATE_LIMIT_PER_MINUTE <= 0:
+            missing.append("SESSION_TTL_HOURS/LOGIN_RATE_LIMIT_PER_MINUTE")
         key_missing = not self.GEMINI_API_KEY or self.GEMINI_API_KEY == "your_gemini_api_key_here"
         if env in {"production", "staging"} and key_missing:
             missing.append("GEMINI_API_KEY")

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.logging import logger
 from app.core.metrics import metrics
@@ -11,17 +12,12 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 
 @router.get("", status_code=status.HTTP_200_OK)
-async def health_check(db: AsyncSession = Depends(get_db)):
-    """Basic health check endpoint for load balancers and uptime probes."""
-    return {
-        "status": "online",
-        "app_name": settings.APP_NAME,
-        "environment": settings.APP_ENV,
-        "api_version": "v1",
-    }
+async def health_check():
+    """Intentionally public, minimal liveness probe."""
+    return {"status": "online"}
 
 
-@router.get("/deep", status_code=status.HTTP_200_OK)
+@router.get("/deep", status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_user)])
 async def deep_health_check(db: AsyncSession = Depends(get_db)):
     """Deep health check endpoint covering database and optional service readiness."""
     db_status = "healthy"

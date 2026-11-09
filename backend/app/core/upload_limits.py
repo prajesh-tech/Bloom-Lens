@@ -12,14 +12,14 @@ class UploadLimiter:
         self.entries = {}
         self.lock = threading.Lock()
 
-    def check(self, principal: str) -> None:
+    def check(self, principal: str, limit: int | None = None) -> None:
         now = time.monotonic()
         with self.lock:
             self.entries = {key: values for key, values in self.entries.items() if values and values[-1] > now - 60}
             values = self.entries.setdefault(principal, deque())
             while values and values[0] <= now - 60:
                 values.popleft()
-            if len(values) >= settings.UPLOAD_RATE_LIMIT_PER_MINUTE or len(self.entries) > 10000:
+            if len(values) >= (limit or settings.UPLOAD_RATE_LIMIT_PER_MINUTE) or len(self.entries) > 10000:
                 raise HTTPException(429, detail={'error_code': 'UploadRateLimited', 'message': 'Too many uploads; retry in one minute.'}, headers={'Retry-After': '60'})
             values.append(now)
 

@@ -9,7 +9,7 @@ from app.schemas.course import (
 )
 from app.services.course_service import CourseService
 
-router = APIRouter(prefix="/course-outcomes", tags=["Course Outcomes"])
+router = APIRouter(prefix="/course-outcomes", tags=["Course Outcomes"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/{co_id}", response_model=CourseOutcomeResponse)
