@@ -1,0 +1,9 @@
+Operating Systems
+SECTION A
+Answer any 2 out of 3
+Q1. Define a process. [2]
+Q2. Define a thread. [2]
+Q3. Define a semaphore. [2]
+SECTION B
+Q4. Consider three processes with arrival times 0, 1, and 2.
+Calculate their waiting times using FCFS. [6 Marks]

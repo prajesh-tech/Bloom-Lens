@@ -1,0 +1,7 @@
+Computer Networks
+PART A
+Question 1: Define packet switching. 2 marks
+2) Let a frame contain 1000 bits. Find transmission delay. [4 Marks]
+PART B
+Q3(a) Explain TCP flow control. [5]
+Q3(b) Compare TCP and UDP. [5]

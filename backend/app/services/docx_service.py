@@ -1,5 +1,7 @@
 from typing import Dict, Any, List
 import docx
+from docx.text.paragraph import Paragraph
+from docx.table import Table
 from app.core.logging import logger
 from app.utils.text_cleaner import clean_text
 
@@ -17,18 +19,16 @@ class DOCXService:
         try:
             doc = docx.Document(file_path)
 
-            # 1. Process regular paragraphs
-            for p in doc.paragraphs:
-                txt = clean_text(p.text)
-                if txt:
-                    paragraphs_text.append(txt)
-
-            # 2. Process text inside table cells
-            for table in doc.tables:
-                for row in table.rows:
-                    row_texts = [clean_text(cell.text) for cell in row.cells if clean_text(cell.text)]
-                    if row_texts:
-                        paragraphs_text.append(" | ".join(row_texts))
+            for element in doc.element.body.iterchildren():
+                if element.tag.endswith("}p"):
+                    text = clean_text(Paragraph(element, doc).text)
+                    if text:
+                        paragraphs_text.append(text)
+                elif element.tag.endswith("}tbl"):
+                    for row in Table(element, doc).rows:
+                        texts = [clean_text(cell.text) for cell in row.cells if clean_text(cell.text)]
+                        if texts:
+                            paragraphs_text.append(" | ".join(texts))
 
             full_text = "\n\n".join(paragraphs_text)
             logger.info(f"Extracted {len(full_text)} characters from DOCX: {file_path}")
@@ -36,7 +36,7 @@ class DOCXService:
             return {
                 "pages": [{"page_number": 1, "text": full_text}],
                 "full_text": full_text,
-                "page_count": 1,
+                "page_count": None,
                 "extraction_method": "docx_python_docx"
             }
         except Exception as e:

@@ -1,0 +1,8 @@
+Engineering Mathematics
+SECTION A
+1. Find the inverse of a 3 x 3 matrix. [5]
+OR
+2. Evaluate a determinant using row reduction. [5]
+3. Given a linear system, find its rank. [5]
+SECTION B
+4. Prove the rank-nullity theorem. [10]

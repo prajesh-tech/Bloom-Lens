@@ -2,6 +2,7 @@ import re
 from typing import List, Dict, Any, Optional, Tuple
 from app.core.logging import logger
 from app.services.marks_service import MarksService
+from app.services.performance_estimation_service import extract_leaf_questions
 from app.utils.text_cleaner import clean_text, normalize_question_text
 
 
@@ -28,7 +29,7 @@ class QuestionExtractionService:
         re.compile(r"answer\s+any\s+(\d+)\s+out\s+of\s+(\d+)", re.IGNORECASE),
         re.compile(r"attempt\s+any\s+(\d+)", re.IGNORECASE),
         re.compile(r"attempt\s+either\s+.*?\s+or\s+", re.IGNORECASE),
-        re.compile(r"or\s*$", re.IGNORECASE),
+        re.compile(r"^\s*(?:---|\*\*\*)?\s*\(?OR\)?\s*(?:---|\*\*\*)?\s*$", re.IGNORECASE | re.MULTILINE),
     ]
 
     QUESTION_VERBS = {
@@ -76,6 +77,8 @@ class QuestionExtractionService:
         current_section_marks: Optional[float] = None
         current_choice_group: Optional[str] = None
         auto_q_counter = 1
+        current_section = None
+        has_numbering = any(cls.MAIN_Q_PATTERN.match(line) for line in lines)
 
         for line in lines:
             # Check for choice divider line e.g. "OR", "--- OR ---", "(OR)"
@@ -85,6 +88,11 @@ class QuestionExtractionService:
                     current_choice_group = f"{parent_id}_OR_GROUP"
                     current_block["choice_group"] = current_choice_group
                 continue
+
+            section_match = re.match(r"^(PART|SECTION|GROUP)\s+[A-Z0-9]+", line, re.IGNORECASE)
+            if section_match:
+                current_section = section_match.group(0).upper()
+                current_section_marks = None
 
             # Check section header with mark distribution.
             # Handles both:
@@ -114,20 +122,8 @@ class QuestionExtractionService:
             if re.match(r"^(PART|SECTION|GROUP)\s+[A-Z0-9]+", line, re.IGNORECASE) or line.startswith("***"):
                 continue
 
-            # Skip numbered instruction/preamble lines such as:
-            #   "1.All Questions carry equal marks."
-            #   "2.All Sections are Mandatory."
-            # These start with a digit+dot and contain plain prose without CO/PO tags or known question verbs.
-            preamble_match = re.match(r"^\d{1,2}[\.)\s]", line)
-            if preamble_match:
-                first_word_after = line[preamble_match.end():].split()[0].lower().rstrip(":,.()") if line[preamble_match.end():].split() else ""
-                has_co_po_tag = bool(re.search(r"\[CO\d+", line, re.IGNORECASE))
-                is_question_verb = first_word_after in cls.QUESTION_VERBS
-                if not has_co_po_tag and not is_question_verb:
-                    # Treat as preamble/instruction, append to current block text if any
-                    if current_block:
-                        current_block["raw_lines"].append(line)
-                    continue
+            if re.search(r"\b(all questions|carry equal marks|are compulsory|all sections|answer any|attempt any)\b", line, re.IGNORECASE):
+                continue
 
             # Check if line starts a new main or sub question
             q_num_match, is_sub, parent_num = cls._match_question_number(line)
@@ -138,7 +134,8 @@ class QuestionExtractionService:
                 has_co_po = bool(re.search(r"\[CO\d+,?\s*PO\d+\]", line, re.IGNORECASE))
                 is_verb_start = first_word in cls.QUESTION_VERBS
 
-                if (is_verb_start or has_co_po) and not line.lower().startswith("note:") and not line.lower().startswith("answer the following"):
+                follows_marks = bool(current_block and MarksService.extract_marks(" ".join(current_block["raw_lines"]))[0] is not None)
+                if (not has_numbering or follows_marks) and (is_verb_start or has_co_po) and not line.lower().startswith("note:") and not line.lower().startswith("answer the following"):
                     q_num_match = f"Q{auto_q_counter}"
                     is_sub = False
                     parent_num = None
@@ -153,9 +150,12 @@ class QuestionExtractionService:
                     "parent_number": parent_num,
                     "is_sub": is_sub,
                     "section_marks": current_section_marks,
+                    "section": current_section,
                     "choice_group": current_choice_group,
                     "raw_lines": [line] if not re.match(r"^(?:Q|Question)?\s*\d{1,2}[\.\:\)]?\s*$", line, re.IGNORECASE) else [],
                 }
+                current_choice_group = None
+                auto_q_counter = max(auto_q_counter, int(re.search(r"\d+", q_num_match).group()) + 1) if re.search(r"\d+", q_num_match) else auto_q_counter
             else:
                 if current_block:
                     current_block["raw_lines"].append(line)
@@ -193,6 +193,7 @@ class QuestionExtractionService:
             questions.append({
                 "question_number": q_number,
                 "parent_number": parent_q,
+                "section": block.get("section"),
                 "original_text": full_q_text,
                 "normalized_text": norm_text,
                 "marks": marks,
@@ -216,15 +217,13 @@ class QuestionExtractionService:
         if m_alone:
             return f"Q{m_alone.group(1)}", False, None
 
-        # Match explicit Q1(a), Q2b, etc.
-        m_explicit = re.match(r"^Q?(\d+)\s*[\.\(]?\s*([a-z1-9])[\)\.]?\s*", line, re.IGNORECASE)
-        if m_explicit and m_explicit.group(2) and not m_explicit.group(2).isdigit():
+        # Require a delimited label; never consume the first letter of prose.
+        m_explicit = re.match(r"^(?:Question\s*|Q\.?\s*)?(\d+)\s*(?:\(([a-z]|[ivxlcdm]+)\)|([a-z])\))(?=\W|$)\s*", line, re.IGNORECASE)
+        if m_explicit:
             main_n = f"Q{m_explicit.group(1)}"
-            sub_n = f"{main_n}({m_explicit.group(2).lower()})"
-            return sub_n, True, main_n
+            return f"{main_n}({(m_explicit.group(2) or m_explicit.group(3)).lower()})", True, main_n
 
-        # Match main question Q1, Q2, 1., 2.
-        m_main = re.match(r"^(?:Q|Question)?\s*(\d{1,2})[\.\:\)]\s*", line, re.IGNORECASE)
+        m_main = cls.MAIN_Q_PATTERN.match(line)
         if m_main:
             return f"Q{m_main.group(1)}", False, None
 
@@ -249,7 +248,17 @@ class QuestionExtractionService:
                 has_optional = True
                 details.append(match.group(0))
 
+        rules = []
+        section = None
+        for line in text.splitlines():
+            header = re.match(r"^(PART|SECTION|GROUP)\s+[A-Z0-9]+", line.strip(), re.IGNORECASE)
+            if header:
+                section = header.group(0).upper()
+            match = re.search(r"(?:answer|attempt)\s+any\s+(\d+)\s+out\s+of\s+(\d+)", line, re.IGNORECASE)
+            if match:
+                rules.append({"section": section, "n": int(match.group(1)), "m": int(match.group(2))})
         return {
+            "rules": rules,
             "has_optional_questions": has_optional,
             "detected_patterns": details,
         }
@@ -269,11 +278,30 @@ class QuestionExtractionService:
         total_extracted_marks = 0.0
         missing_marks_count = 0
 
-        for q in questions:
+        for q in extract_leaf_questions(questions):
             if q.get("marks") is not None:
                 total_extracted_marks += q["marks"]
             else:
                 missing_marks_count += 1
+
+        unresolved_optional = False
+        if has_optional:
+            rules = optional_info["rules"]
+            unresolved_optional = not rules or len({r["section"] for r in rules}) != len(rules)
+            for rule in rules:
+                section_questions = [q for q in extract_leaf_questions(questions) if q.get("section") == rule["section"]]
+                totals = {}
+                for question in section_questions:
+                    key = question.get("parent_number") or question["question_number"]
+                    if question.get("marks") is None:
+                        unresolved_optional = True
+                        break
+                    totals[key] = totals.get(key, 0) + question["marks"]
+                if (len(totals) != rule["m"] or not 0 < rule["n"] <= rule["m"]
+                        or len(set(totals.values())) != 1):
+                    unresolved_optional = True
+                else:
+                    total_extracted_marks -= (rule["m"] - rule["n"]) * next(iter(totals.values()))
 
         reasons = []
         if missing_marks_count > 0:
@@ -282,7 +310,7 @@ class QuestionExtractionService:
         if has_optional:
             reasons.append("optional_question_structure")
 
-        status = "valid"
+        status = "uncertain" if unresolved_optional or missing_marks_count else "valid"
         if abs(total_extracted_marks - maximum_marks) > 0.5:
             if missing_marks_count > 0 or has_optional:
                 status = "uncertain"
@@ -298,4 +326,5 @@ class QuestionExtractionService:
             "optional_question_flag": has_optional,
             "possible_reasons": reasons,
             "optional_details": optional_info,
+            "question_sections": {q["question_number"]: q.get("section") for q in questions},
         }

@@ -2,7 +2,11 @@ from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
 
 
-class OverviewAnalyticsResponse(BaseModel):
+class AnalyticsUncertainty(BaseModel):
+    uncertain_paper_ids: List[int] = Field(default_factory=list, description="Optional papers whose choice-dependent distributions cannot be determined")
+
+
+class OverviewAnalyticsResponse(AnalyticsUncertainty):
     papers_analyzed: int = Field(..., description="Total question papers analyzed")
     questions_analyzed: int = Field(..., description="Total questions analyzed")
     subjects_count: int = Field(..., description="Total distinct subjects")
@@ -19,7 +23,7 @@ class BloomDistributionItem(BaseModel):
     marks_percentage: float
 
 
-class BloomAnalyticsResponse(BaseModel):
+class BloomAnalyticsResponse(AnalyticsUncertainty):
     distributions: List[BloomDistributionItem]
     total_questions: int
     total_marks: float
@@ -32,7 +36,7 @@ class TopicFrequencyItem(BaseModel):
     bloom_breakdown: Dict[str, int] = Field(default_factory=dict)
 
 
-class TopicAnalyticsResponse(BaseModel):
+class TopicAnalyticsResponse(AnalyticsUncertainty):
     topics: List[TopicFrequencyItem]
 
 
@@ -50,12 +54,12 @@ class HistoricalTrendItem(BaseModel):
     L6: float = 0.0
 
 
-class TrendsAnalyticsResponse(BaseModel):
+class TrendsAnalyticsResponse(AnalyticsUncertainty):
     metric_type: str  # "count" or "marks_weighted"
     trends: List[HistoricalTrendItem]
 
 
-class QuestionAnalyticsResponse(BaseModel):
+class QuestionAnalyticsResponse(AnalyticsUncertainty):
     repeated_questions_count: int
     similar_questions_count: int
     highest_mark_questions: List[Dict[str, Any]]

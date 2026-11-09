@@ -1,0 +1,8 @@
+Algorithms — End Semester
+SECTION A
+Q.1 Define asymptotic notation. (5M)
+Q2) Given an unsorted array, describe merge sort. [5]
+SECTION B
+Q3. Answer both parts. [10]
+(a) Derive the recurrence for merge sort. [5]
+(b) Solve the recurrence. [5]

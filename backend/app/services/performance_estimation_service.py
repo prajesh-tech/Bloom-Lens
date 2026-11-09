@@ -94,8 +94,11 @@ def extract_leaf_questions(questions: List[Any]) -> List[Any]:
         if parent_id is not None:
             parent_ids.add(parent_id)
 
+    parent_numbers = {q.get("parent_number") for q in questions if isinstance(q, dict) and q.get("parent_number")}
     leaf_questions = []
     for q in questions:
+        if isinstance(q, dict) and q.get("question_number") in parent_numbers:
+            continue
         q_id = getattr(q, "id", None) if not isinstance(q, dict) else q.get("id")
         if q_id is not None and q_id in parent_ids:
             # This question is referenced as a parent by another question

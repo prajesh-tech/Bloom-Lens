@@ -1,0 +1,7 @@
+Database Systems — Internal Examination
+PART A [2Q*2M=4 Marks]
+1. Define functional dependency.
+2. State the ACID properties.
+PART B
+3. Consider R(A,B,C) with A -> B and B -> C.
+Explain its highest normal form. [6 Marks]
