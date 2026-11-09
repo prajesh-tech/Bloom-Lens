@@ -1,0 +1,104 @@
+{
+  "Database Systems": {
+    "Normalization & Normal Forms": [
+      "normalization",
+      "1nf",
+      "2nf",
+      "3nf",
+      "bcnf",
+      "4nf",
+      "functional dependency"
+    ],
+    "Transaction Management": [
+      "acid",
+      "transaction",
+      "concurrency",
+      "commit",
+      "rollback",
+      "isolation",
+      "deadlock"
+    ],
+    "Indexing & Hashing": [
+      "b-tree",
+      "b+ tree",
+      "indexing",
+      "hashing",
+      "primary key",
+      "foreign key"
+    ],
+    "Relational Algebra & SQL": [
+      "sql",
+      "join",
+      "select",
+      "group by",
+      "relational algebra",
+      "query"
+    ]
+  },
+  "Data Structures": {
+    "Trees & Binary Search Trees": [
+      "binary tree",
+      "bst",
+      "avl",
+      "red-black tree",
+      "tree traversal",
+      "inorder",
+      "preorder"
+    ],
+    "Graphs & Graph Algorithms": [
+      "graph",
+      "bfs",
+      "dfs",
+      "dijkstra",
+      "shortest path",
+      "spanning tree",
+      "kruskal",
+      "prim"
+    ],
+    "Sorting & Searching": [
+      "quicksort",
+      "mergesort",
+      "heapsort",
+      "binary search",
+      "hashing",
+      "sorting"
+    ],
+    "Stacks & Queues": [
+      "stack",
+      "queue",
+      "push",
+      "pop",
+      "enqueue",
+      "dequeue",
+      "priority queue"
+    ]
+  },
+  "General Computer Science": {
+    "Software Design & Architecture": [
+      "design pattern",
+      "architecture",
+      "solid",
+      "coupling",
+      "cohesion",
+      "uml"
+    ],
+    "Operating Systems": [
+      "process",
+      "thread",
+      "scheduling",
+      "paging",
+      "virtual memory",
+      "deadlock",
+      "mutex"
+    ],
+    "Computer Networks": [
+      "tcp/ip",
+      "osi model",
+      "ip address",
+      "routing",
+      "http",
+      "socket",
+      "dns"
+    ]
+  }
+}

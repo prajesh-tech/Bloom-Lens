@@ -1,0 +1,151 @@
+subject,question,label,rationale
+Databases,What is normalization?,L1,Recall a definition or properties.
+Databases,State two key properties of normalization.,L1,Recall a definition or properties.
+Databases,Explain the design of a B-tree index.,L2,Explain an established concept without requiring a new solution.
+Databases,Describe the role of normalization in a transaction-heavy library catalog.,L2,Explain an established concept without requiring a new solution.
+Databases,"Apply normalization to R(A,B,C) with dependencies A -> B and B -> C.",L3,Execute a known method on specified input.
+Databases,"Calculate the number of candidate keys for R(A,B,C) with dependencies A -> B and B -> C.",L3,Execute a known method on specified input.
+Databases,"Compare normalization with denormalization, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Databases,"Justify the choice of normalization for a transaction-heavy library catalog, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Databases,Design a solution for a transaction-heavy library catalog that integrates normalization.,L6,Create a solution or original extension.
+Databases,"Develop an original extension of normalization for a transaction-heavy library catalog, specifying its components.",L6,Create a solution or original extension.
+Databases,Define B-tree indexing.,L1,Recall a definition or properties.
+Databases,State two key properties of B-tree indexing.,L1,Recall a definition or properties.
+Databases,Explain B-tree indexing with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Databases,Describe the role of B-tree indexing in a disk-based product catalog.,L2,Explain an established concept without requiring a new solution.
+Databases,"Apply B-tree indexing to an index of order 4 containing keys 10, 20, 30, 40, 50.",L3,Execute a known method on specified input.
+Databases,"Calculate the height of the index for an index of order 4 containing keys 10, 20, 30, 40, 50.",L3,Execute a known method on specified input.
+Databases,"Compare B-tree indexing with hash indexing, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Databases,"Justify the choice of B-tree indexing for a disk-based product catalog, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Databases,Design a solution for a disk-based product catalog that integrates B-tree indexing.,L6,Create a solution or original extension.
+Databases,"Develop an original extension of B-tree indexing for a disk-based product catalog, specifying its components.",L6,Create a solution or original extension.
+Databases,Define transaction scheduling.,L1,Recall a definition or properties.
+Databases,State two key properties of transaction scheduling.,L1,Recall a definition or properties.
+Databases,Explain transaction scheduling with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Databases,Describe the role of transaction scheduling in a banking application requiring serializability.,L2,Explain an established concept without requiring a new solution.
+Databases,"Apply transaction scheduling to transactions T1: read(A), write(A) and T2: read(A), write(A).",L3,Execute a known method on specified input.
+Databases,"Calculate the number of conflicting operation pairs for transactions T1: read(A), write(A) and T2: read(A), write(A).",L3,Execute a known method on specified input.
+Databases,"Compare transaction scheduling with serial execution, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Databases,"Justify the choice of transaction scheduling for a banking application requiring serializability, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Databases,Design a solution for a banking application requiring serializability that integrates transaction scheduling.,L6,Create a solution or original extension.
+Databases,"Develop an original extension of transaction scheduling for a banking application requiring serializability, specifying its components.",L6,Create a solution or original extension.
+Databases,Define relational joins.,L1,Recall a definition or properties.
+Databases,State two key properties of relational joins.,L1,Recall a definition or properties.
+Databases,Explain relational joins with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Databases,Describe the role of relational joins in a reporting workload with limited memory.,L2,Explain an established concept without requiring a new solution.
+Databases,"Apply relational joins to relations R(A,B)={(1,2),(2,3)} and S(B,C)={(2,4),(3,5)}.",L3,Execute a known method on specified input.
+Databases,"Calculate the cardinality of the natural join for relations R(A,B)={(1,2),(2,3)} and S(B,C)={(2,4),(3,5)}.",L3,Execute a known method on specified input.
+Databases,"Compare relational joins with nested subqueries, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Databases,"Justify the choice of relational joins for a reporting workload with limited memory, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Databases,Design a solution for a reporting workload with limited memory that integrates relational joins.,L6,Create a solution or original extension.
+Databases,"Develop an original extension of relational joins for a reporting workload with limited memory, specifying its components.",L6,Create a solution or original extension.
+Databases,Define buffer replacement.,L1,Recall a definition or properties.
+Databases,State two key properties of buffer replacement.,L1,Recall a definition or properties.
+Databases,Explain buffer replacement with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Databases,Describe the role of buffer replacement in a database with unpredictable access patterns.,L2,Explain an established concept without requiring a new solution.
+Databases,"Apply buffer replacement to three buffer frames and reference sequence 1,2,3,1,4,2,5.",L3,Execute a known method on specified input.
+Databases,"Calculate the number of page faults for three buffer frames and reference sequence 1,2,3,1,4,2,5.",L3,Execute a known method on specified input.
+Databases,"Compare buffer replacement with FIFO replacement, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Databases,"Justify the choice of buffer replacement for a database with unpredictable access patterns, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Databases,Design a solution for a database with unpredictable access patterns that integrates buffer replacement.,L6,Create a solution or original extension.
+Databases,"Develop an original extension of buffer replacement for a database with unpredictable access patterns, specifying its components.",L6,Create a solution or original extension.
+Algorithms,What is a linked list?,L1,Recall a definition or properties.
+Algorithms,State two key properties of merge sort.,L1,Recall a definition or properties.
+Algorithms,Explain merge sort with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Algorithms,Explain how to use a stack to evaluate postfix expressions.,L2,Explain an established concept without requiring a new solution.
+Algorithms,"Apply merge sort to the array [8,3,7,1,6,2].",L3,Execute a known method on specified input.
+Algorithms,"Calculate the number of merge comparisons for the array [8,3,7,1,6,2].",L3,Execute a known method on specified input.
+Algorithms,"Compare merge sort with quick sort, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Algorithms,"Justify the choice of merge sort for a stable external sorting service, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Algorithms,Design a solution for a stable external sorting service that integrates merge sort.,L6,Create a solution or original extension.
+Algorithms,"Develop an original extension of merge sort for a stable external sorting service, specifying its components.",L6,Create a solution or original extension.
+Algorithms,Define binary search.,L1,Recall a definition or properties.
+Algorithms,State two key properties of binary search.,L1,Recall a definition or properties.
+Algorithms,Explain binary search with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Algorithms,Describe the role of binary search in a read-heavy ordered dictionary.,L2,Explain an established concept without requiring a new solution.
+Algorithms,"Apply binary search to the sorted array [2,5,8,12,16,23,38] and target 16.",L3,Execute a known method on specified input.
+Algorithms,"Calculate the worst-case number of comparisons for the sorted array [2,5,8,12,16,23,38] and target 16.",L3,Execute a known method on specified input.
+Algorithms,"Compare binary search with linear search, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Algorithms,"Justify the choice of binary search for a read-heavy ordered dictionary, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Algorithms,Design a solution for a read-heavy ordered dictionary that integrates binary search.,L6,Create a solution or original extension.
+Algorithms,"Develop an original extension of binary search for a read-heavy ordered dictionary, specifying its components.",L6,Create a solution or original extension.
+Algorithms,Define breadth-first search.,L1,Recall a definition or properties.
+Algorithms,State two key properties of breadth-first search.,L1,Recall a definition or properties.
+Algorithms,Explain breadth-first search with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Algorithms,Describe the role of breadth-first search in an unweighted route-planning system.,L2,Explain an established concept without requiring a new solution.
+Algorithms,"Apply breadth-first search to the undirected graph with edges AB, AC, BD, CD, DE starting at A.",L3,Execute a known method on specified input.
+Algorithms,"Calculate the shortest-path distance from A to E for the undirected graph with edges AB, AC, BD, CD, DE starting at A.",L3,Execute a known method on specified input.
+Algorithms,"Compare breadth-first search with depth-first search, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Algorithms,"Justify the choice of breadth-first search for an unweighted route-planning system, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Algorithms,Design a solution for an unweighted route-planning system that integrates breadth-first search.,L6,Create a solution or original extension.
+Algorithms,"Develop an original extension of breadth-first search for an unweighted route-planning system, specifying its components.",L6,Create a solution or original extension.
+Algorithms,Define hashing.,L1,Recall a definition or properties.
+Algorithms,State two key properties of hashing.,L1,Recall a definition or properties.
+Algorithms,Explain hashing with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Algorithms,Describe the role of hashing in a symbol table requiring fast lookups.,L2,Explain an established concept without requiring a new solution.
+Algorithms,"Apply hashing to a table of size 7 with keys 10,17,24 and h(k)=k mod 7.",L3,Execute a known method on specified input.
+Algorithms,"Calculate the number of linear-probing collisions for a table of size 7 with keys 10,17,24 and h(k)=k mod 7.",L3,Execute a known method on specified input.
+Algorithms,"Compare hashing with balanced search trees, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Algorithms,"Justify the choice of hashing for a symbol table requiring fast lookups, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Algorithms,Design a solution for a symbol table requiring fast lookups that integrates hashing.,L6,Create a solution or original extension.
+Algorithms,"Develop an original extension of hashing for a symbol table requiring fast lookups, specifying its components.",L6,Create a solution or original extension.
+Algorithms,Define dynamic programming.,L1,Recall a definition or properties.
+Algorithms,State two key properties of dynamic programming.,L1,Recall a definition or properties.
+Algorithms,Explain dynamic programming with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Algorithms,Describe the role of dynamic programming in a resource allocator with overlapping subproblems.,L2,Explain an established concept without requiring a new solution.
+Algorithms,"Apply dynamic programming to a knapsack of capacity 5 with items (weight,value)=(2,3),(3,4),(4,5).",L3,Execute a known method on specified input.
+Algorithms,"Calculate the optimal knapsack value for a knapsack of capacity 5 with items (weight,value)=(2,3),(3,4),(4,5).",L3,Execute a known method on specified input.
+Algorithms,"Compare dynamic programming with greedy selection, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Algorithms,"Justify the choice of dynamic programming for a resource allocator with overlapping subproblems, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Algorithms,Design a solution for a resource allocator with overlapping subproblems that integrates dynamic programming.,L6,Create a solution or original extension.
+Algorithms,"Develop an original extension of dynamic programming for a resource allocator with overlapping subproblems, specifying its components.",L6,Create a solution or original extension.
+Networks,Define distance-vector routing.,L1,Recall a definition or properties.
+Networks,State two key properties of distance-vector routing.,L1,Recall a definition or properties.
+Networks,Explain distance-vector routing with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Networks,Describe the role of distance-vector routing in a small network with intermittent link failures.,L2,Explain an established concept without requiring a new solution.
+Networks,"Apply distance-vector routing to links AB=2, BC=3, AC=8 with destination C.",L3,Execute a known method on specified input.
+Networks,"Calculate the shortest route cost from A to C for links AB=2, BC=3, AC=8 with destination C.",L3,Execute a known method on specified input.
+Networks,"Compare distance-vector routing with link-state routing, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Networks,"Justify the choice of distance-vector routing for a small network with intermittent link failures, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Networks,Design a solution for a small network with intermittent link failures that integrates distance-vector routing.,L6,Create a solution or original extension.
+Networks,"Develop an original extension of distance-vector routing for a small network with intermittent link failures, specifying its components.",L6,Create a solution or original extension.
+Networks,Define stop-and-wait ARQ.,L1,Recall a definition or properties.
+Networks,State two key properties of stop-and-wait ARQ.,L1,Recall a definition or properties.
+Networks,Explain stop-and-wait ARQ with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Networks,Describe the role of stop-and-wait ARQ in a reliable telemetry channel.,L2,Explain an established concept without requiring a new solution.
+Networks,Apply stop-and-wait ARQ to a 1000-bit frame on a 1 Mbps link with 10 ms round-trip delay.,L3,Execute a known method on specified input.
+Networks,Calculate the maximum link utilization for a 1000-bit frame on a 1 Mbps link with 10 ms round-trip delay.,L3,Execute a known method on specified input.
+Networks,"Compare stop-and-wait ARQ with sliding-window ARQ, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Networks,"Justify the choice of stop-and-wait ARQ for a reliable telemetry channel, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Networks,Design a solution for a reliable telemetry channel that integrates stop-and-wait ARQ.,L6,Create a solution or original extension.
+Networks,"Develop an original extension of stop-and-wait ARQ for a reliable telemetry channel, specifying its components.",L6,Create a solution or original extension.
+Networks,Define IP subnetting.,L1,Recall a definition or properties.
+Networks,State two key properties of IP subnetting.,L1,Recall a definition or properties.
+Networks,Explain IP subnetting with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Networks,Describe the role of IP subnetting in a campus network with four departments.,L2,Explain an established concept without requiring a new solution.
+Networks,Apply IP subnetting to network 192.168.10.0/24 divided into four equal subnets.,L3,Execute a known method on specified input.
+Networks,Calculate the number of usable hosts per subnet for network 192.168.10.0/24 divided into four equal subnets.,L3,Execute a known method on specified input.
+Networks,"Compare IP subnetting with classful addressing, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Networks,"Justify the choice of IP subnetting for a campus network with four departments, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Networks,Design a solution for a campus network with four departments that integrates IP subnetting.,L6,Create a solution or original extension.
+Networks,"Develop an original extension of IP subnetting for a campus network with four departments, specifying its components.",L6,Create a solution or original extension.
+Networks,Define TCP congestion control.,L1,Recall a definition or properties.
+Networks,State two key properties of TCP congestion control.,L1,Recall a definition or properties.
+Networks,Explain TCP congestion control with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Networks,Describe the role of TCP congestion control in a shared high-latency transport connection.,L2,Explain an established concept without requiring a new solution.
+Networks,Apply TCP congestion control to a sender starting with congestion window 1 MSS and threshold 8 MSS.,L3,Execute a known method on specified input.
+Networks,Calculate the window after three loss-free round trips for a sender starting with congestion window 1 MSS and threshold 8 MSS.,L3,Execute a known method on specified input.
+Networks,"Compare TCP congestion control with fixed-rate transmission, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Networks,"Justify the choice of TCP congestion control for a shared high-latency transport connection, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Networks,Design a solution for a shared high-latency transport connection that integrates TCP congestion control.,L6,Create a solution or original extension.
+Networks,"Develop an original extension of TCP congestion control for a shared high-latency transport connection, specifying its components.",L6,Create a solution or original extension.
+Networks,Define packet switching.,L1,Recall a definition or properties.
+Networks,State two key properties of packet switching.,L1,Recall a definition or properties.
+Networks,Explain packet switching with a worked conceptual example.,L2,Explain an established concept without requiring a new solution.
+Networks,Describe the role of packet switching in a bursty multi-user communication network.,L2,Explain an established concept without requiring a new solution.
+Networks,Apply packet switching to three 1 Mbps store-and-forward links carrying one 1000-bit packet.,L3,Execute a known method on specified input.
+Networks,Calculate the end-to-end transmission delay ignoring propagation for three 1 Mbps store-and-forward links carrying one 1000-bit packet.,L3,Execute a known method on specified input.
+Networks,"Compare packet switching with circuit switching, identifying their assumptions and tradeoffs.",L4,"Analyze similarities, differences and assumptions."
+Networks,"Justify the choice of packet switching for a bursty multi-user communication network, using explicit criteria.",L5,Judge a choice against explicit criteria.
+Networks,Design a solution for a bursty multi-user communication network that integrates packet switching.,L6,Create a solution or original extension.
+Networks,"Develop an original extension of packet switching for a bursty multi-user communication network, specifying its components.",L6,Create a solution or original extension.

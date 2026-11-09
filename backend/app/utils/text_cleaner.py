@@ -32,7 +32,7 @@ def normalize_question_text(text: str) -> str:
         return ""
     text_lower = text.lower().strip()
     # Remove leading question numbers e.g. "Q1(a)", "1.", "a)"
-    text_lower = re.sub(r"^(q\d+\s*\(?[a-z\d]?\)?|\d+[\.\)]|\([a-z\d]+\))\s*", "", text_lower)
+    text_lower = re.sub(r"^(?:(?:question|q)\.?\s*\d+(?:\s*\([a-z0-9]+\))?(?:[.):]\s*|\s+|$)|\d+[.):]\s*|\([a-z0-9]+\)[.]?\s*|[a-z]\)\s*)", "", text_lower)
     # Remove punctuation
     translator = str.maketrans("", "", string.punctuation)
     clean = text_lower.translate(translator)

@@ -30,6 +30,7 @@ class BloomAnalyticsResponse(AnalyticsUncertainty):
 
 
 class TopicFrequencyItem(BaseModel):
+    topic_id: Optional[int] = None
     topic: str
     frequency: int
     total_marks: float
@@ -41,6 +42,7 @@ class TopicAnalyticsResponse(AnalyticsUncertainty):
 
 
 class HistoricalTrendItem(BaseModel):
+    unknown_question_count: int = 0
     paper_id: Optional[int] = None
     paper: str
     year: Optional[str] = None

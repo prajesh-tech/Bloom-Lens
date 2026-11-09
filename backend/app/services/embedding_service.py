@@ -1,4 +1,5 @@
 import threading
+import uuid
 from typing import List, Optional
 import numpy as np
 from app.core.config import settings
@@ -8,6 +9,7 @@ _embedding_model = None
 _fallback_vectorizer = None
 _model_lock = threading.Lock()
 _vectorizer_lock = threading.Lock()
+_process_model_version = uuid.uuid4().hex
 
 
 def get_fallback_vectorizer():
@@ -35,7 +37,7 @@ def get_embedding_model():
                 _embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
                 logger.info("SentenceTransformer model loaded successfully.")
             except Exception as e:
-                logger.warning(f"Failed to load SentenceTransformer model ({settings.EMBEDDING_MODEL_NAME}): {e}")
+                logger.error("SentenceTransformer failed to load; using hashing embeddings")
                 _embedding_model = False
     return _embedding_model if _embedding_model is not False else None
 
@@ -46,6 +48,28 @@ def get_embedding_backend_status() -> str:
     if _embedding_model is not None:
         return "model_loaded"
     return "not_loaded"
+
+
+def get_embedding_backend_metadata() -> dict:
+    fallback = _embedding_model is False
+    revision = '1'
+    if not fallback:
+        first_module = _embedding_model._first_module() if hasattr(_embedding_model, '_first_module') else None
+        config = getattr(getattr(first_module, 'auto_model', None), 'config', None)
+        revision = getattr(config, '_commit_hash', None) or _process_model_version
+    return {'backend': 'hashing' if fallback else 'sentence_transformers',
+            'model': 'HashingVectorizer-384' if fallback else settings.EMBEDDING_MODEL_NAME,
+            'version': revision}
+
+
+def embedding_backend_identity(metadata: dict) -> str:
+    return ':'.join(metadata[key] for key in ('backend', 'model', 'version'))
+
+
+def _mark_fallback() -> None:
+    global _embedding_model
+    with _model_lock:
+        _embedding_model = False
 
 
 class EmbeddingService:
@@ -63,7 +87,8 @@ class EmbeddingService:
                 vec = model.encode(text, convert_to_numpy=True, normalize_embeddings=True)
                 return vec.astype(np.float32)
             except Exception as e:
-                logger.error(f"Error generating model embedding: {e}")
+                logger.error("Model embedding failed; using hashing embeddings")
+                _mark_fallback()
 
         # Robust scikit-learn TF-IDF / HashingVectorizer fallback
         try:
@@ -89,7 +114,8 @@ class EmbeddingService:
                 vecs = model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
                 return [v.astype(np.float32) for v in vecs]
             except Exception as e:
-                logger.error(f"Error generating batch model embeddings: {e}")
+                logger.error("Batch model embedding failed; using hashing embeddings")
+                _mark_fallback()
 
         # Fallback batch generation
         res = []

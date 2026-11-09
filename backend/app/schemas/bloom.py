@@ -40,7 +40,7 @@ class ComponentScores(BaseModel):
 class BloomClassificationResult(BaseModel):
     primary_level: str
     bloom_level_id: int
-    confidence: float
+    confidence: float = Field(description='Uncalibrated classifier score; not a probability of correctness')
     explanation: str
     detected_verbs: List[str] = []
     cognitive_operation: str = ""

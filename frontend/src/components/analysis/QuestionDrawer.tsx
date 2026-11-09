@@ -4,7 +4,7 @@ import { Drawer } from '../common/Drawer';
 import { BloomBadge } from '../common/BloomBadge';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
-import { formatMarks, formatConfidence, formatQuestionId } from '../../utils/formatters';
+import { formatMarks, formatQuestionId } from '../../utils/formatters';
 import { BLOOM_CONFIG, getBloomCode, getBloomConfig } from '../../config/bloomConfig';
 import { Copy, Edit3, Check, AlertTriangle, Sparkles } from 'lucide-react';
 import { toast } from '../common/Toast';
@@ -14,6 +14,7 @@ interface QuestionDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveOverride: (questionId: number, payload: QuestionPatchPayload) => Promise<void>;
+  relatedContent?: React.ReactNode;
 }
 
 export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
@@ -21,6 +22,7 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
   isOpen,
   onClose,
   onSaveOverride,
+  relatedContent,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,6 +97,8 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
       title={`Question ${formatQuestionId(question.question_number)}`}
       subtitle={`Analysis Record ID: #${question.id}`}
     >
+      {meta?.needs_reanalysis && <p role="alert">Question text changed. AI analysis needs to be run again.</p>}
+      {meta?.embedding_backend?.backend === 'hashing' && <p>Analysis used fallback text embeddings.</p>}
       {/* Top Action Bar */}
       <div className="flex items-center justify-between gap-3 pb-2">
         <div className="flex items-center gap-2">
@@ -132,8 +136,8 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
         <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
           <div>
-            <strong className="font-semibold block mb-0.5">Low Classification Confidence</strong>
-            <span>AI Bloom classification confidence is {formatConfidence(question.bloom_confidence)}. Manual review is recommended.</span>
+            <strong className="font-semibold block mb-0.5">Low classifier score</strong>
+            <span>Classifier score is {question.bloom_confidence?.toFixed(2)}. Manual review is recommended.</span>
           </div>
         </div>
       )}
@@ -245,8 +249,8 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
         </div>
 
         <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-1">
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Classification Confidence</span>
-          <span className="text-base font-bold font-mono text-slate-900 dark:text-white">{formatConfidence(question.bloom_confidence)}</span>
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Classifier score</span>
+          <span className="text-base font-bold font-mono text-slate-900 dark:text-white">{question.bloom_confidence?.toFixed(2) ?? "Unknown"}</span>
         </div>
 
         <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-1">
@@ -296,6 +300,7 @@ export const QuestionDrawer: React.FC<QuestionDrawerProps> = ({
           </div>
         </div>
       )}
+      {relatedContent}
     </Drawer>
   );
 };

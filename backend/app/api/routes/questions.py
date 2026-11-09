@@ -1,6 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, func, distinct, or_, and_, delete
+from sqlalchemy import select, func, distinct, or_, and_, delete, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -19,7 +19,7 @@ from app.schemas.question import (
     QuestionSimilarityResponse,
 )
 from app.services.bloom_service import BLOOM_LEVEL_MAP, BLOOM_NAME_MAP
-from app.utils.text_cleaner import sanitize_display_text
+from app.utils.text_cleaner import sanitize_display_text, normalize_question_text
 from app.utils.search import escape_like
 from app.models.reviewer import QuestionRevision
 from app.schemas.reviewer import RevisionResponse
@@ -43,8 +43,8 @@ def _build_question_response(q: Question, include_children: bool = True) -> Ques
     """Helper to convert Question database entity to QuestionResponse Pydantic schema."""
     primary_topic = None
     if q.question_topics and len(q.question_topics) > 0:
-        qt = q.question_topics[0]
-        if qt.topic:
+        qt = next((link for link in q.question_topics if link.is_primary), None)
+        if qt and qt.topic:
             primary_topic = qt.topic.name
 
     sub_qs = [_build_question_response(sub, include_children=False) for sub in (q.sub_questions or [])] if include_children else []
@@ -190,11 +190,23 @@ async def override_question(
 
     if patch.question_text is not None and patch.question_text != q.original_text:
         q.original_text = sanitize_display_text(patch.question_text)
+        q.normalized_text = normalize_question_text(q.original_text)
+        q.embedding_vector = q.embedding_backend = q.embedding_metadata = None
+        q.ai_analysis_metadata = {**(q.ai_analysis_metadata or {}), 'needs_reanalysis': True}
+        await db.execute(delete(QuestionSimilarity).where(or_(QuestionSimilarity.source_question_id == q.id, QuestionSimilarity.target_question_id == q.id)))
         is_corrected = True
+
+    for field in ('co_mapping', 'choice_group'):
+        if field in patch.model_fields_set:
+            setattr(q, field, getattr(patch, field))
+            is_corrected = True
 
     if patch.marks is not None:
         q.marks = patch.marks
         q.marks_confidence = "high"
+        q.question_paper.validation_status = 'uncertain'
+        q.question_paper.validation_metadata = {**(q.question_paper.validation_metadata or {}),
+            'status': 'uncertain', 'possible_reasons': ['question_override_requires_validation']}
         is_corrected = True
 
     if patch.unit is not None:
@@ -258,3 +270,19 @@ async def question_revisions(question_id: int, limit: int = Query(50, ge=1, le=1
     rows = (await db.execute(select(QuestionRevision).where(QuestionRevision.question_id == question_id)
                              .order_by(QuestionRevision.id.desc()).limit(limit))).scalars().all()
     return [RevisionResponse.model_validate(row) for row in rows]
+
+
+@router.get('/{question_id}/similar', response_model=List[QuestionSimilarityResponse], dependencies=[Depends(get_current_user)])
+async def similar_questions(question_id: int, subject_id: Optional[int] = None, limit: int = Query(10, ge=1, le=100), db: AsyncSession = Depends(get_db)):
+    source = (await db.execute(select(Question.id, QuestionPaper.subject_id).join(QuestionPaper).where(Question.id == question_id))).first()
+    if source is None:
+        raise HTTPException(404, 'Question not found.')
+    other_id = case((QuestionSimilarity.source_question_id == question_id, QuestionSimilarity.target_question_id), else_=QuestionSimilarity.source_question_id)
+    rows = (await db.execute(select(QuestionSimilarity, Question).join(Question, Question.id == other_id).join(QuestionPaper).where(
+        or_(QuestionSimilarity.source_question_id == question_id, QuestionSimilarity.target_question_id == question_id),
+        QuestionPaper.subject_id == (subject_id if subject_id is not None else source.subject_id)
+    ).order_by(QuestionSimilarity.similarity_score.desc()).limit(limit))).all()
+    return [QuestionSimilarityResponse(id=match.id, source_question_id=question_id, target_question_id=question.id,
+        target_question_text=question.original_text, target_question_number=question.question_number,
+        similarity_score=match.similarity_score, similarity_type=match.similarity_type, classification=match.classification)
+        for match, question in rows]

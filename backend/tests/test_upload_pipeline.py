@@ -3,10 +3,10 @@ import docx
 import pytest
 
 
-def paper_bytes():
+def paper_bytes(text='Q1. Define normalization. [5 Marks]'):
     stream = BytesIO()
     document = docx.Document()
-    document.add_paragraph('Q1. Define normalization. [5 Marks]')
+    document.add_paragraph(text)
     document.save(stream)
     return stream.getvalue()
 

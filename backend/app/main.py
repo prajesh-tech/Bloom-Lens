@@ -13,7 +13,7 @@ from app.core.logging import logger
 from app.core.metrics import metrics
 from app.core.upload_limits import UploadBodyLimitMiddleware
 from app.services.paper_processing_service import fail_interrupted_jobs
-from app.api.routes import health, papers, questions, analytics, courses, course_outcomes, browser_auth
+from app.api.routes import health, papers, questions, analytics, courses, course_outcomes, browser_auth, subjects
 from app.services.embedding_service import get_embedding_model
 
 
@@ -79,6 +79,7 @@ async def add_process_time_header(request: Request, call_next):
 # Register API Router Endpoints under /api/v1
 api_v1_prefix = settings.API_V1_STR
 app.include_router(browser_auth.router, prefix=api_v1_prefix)
+app.include_router(subjects.router, prefix=api_v1_prefix)
 app.include_router(health.router, prefix=api_v1_prefix)
 app.include_router(papers.router, prefix=api_v1_prefix)
 app.include_router(questions.router, prefix=api_v1_prefix)

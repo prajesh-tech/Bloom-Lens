@@ -6,12 +6,13 @@ import { PerformanceEstimateCard } from '../components/analysis/PerformanceEstim
 import { QuestionFilterBar } from '../components/analysis/QuestionFilterBar';
 import { QuestionTable } from '../components/analysis/QuestionTable';
 import { QuestionDrawer } from '../components/analysis/QuestionDrawer';
+import { SimilarQuestions } from '../components/analysis/SimilarQuestions';
 import { BloomDonutChart } from '../components/charts/BloomDonutChart';
 import { BloomBarChart } from '../components/charts/BloomBarChart';
 import { Card } from '../components/common/Card';
 import { Skeleton } from '../components/common/Skeleton';
 import { useAnalysisResultQueries, usePatchQuestionMutation } from '../services/queries';
-import { BloomLevel } from '../types/bloom';
+import { paperBloomDistributions as computePaperBloomDistributions } from '../utils/paperDistribution';
 import { QuestionAnalysis, QuestionPatchPayload } from '../types/question';
 import { BloomDistributionItem } from '../types/analytics';
 import { getBloomCode } from '../config/bloomConfig';
@@ -59,62 +60,7 @@ export const AnalysisResults: React.FC = () => {
   // Leaf questions are those with no sub_questions (i.e. not parent containers).
   // This prevents double-counting marks when parents and their children are both
   // present in the flat questions list returned by the API.
-  const paperBloomDistributions = useMemo<BloomDistributionItem[]>(() => {
-    const levels: { code: string; name: BloomLevel }[] = [
-      { code: 'L1', name: 'Remember' },
-      { code: 'L2', name: 'Understand' },
-      { code: 'L3', name: 'Apply' },
-      { code: 'L4', name: 'Analyze' },
-      { code: 'L5', name: 'Evaluate' },
-      { code: 'L6', name: 'Create' },
-    ];
-
-    // Collect IDs that are referenced as parent by any other question
-    const parentIds = new Set<number>();
-    questions.forEach((q) => {
-      if (q.parent_question_id != null) parentIds.add(q.parent_question_id);
-    });
-
-    // Leaf = not a parent AND has no populated sub_questions array
-    const leafQuestions = questions.filter(
-      (q) =>
-        !parentIds.has(q.id) &&
-        (!q.sub_questions || q.sub_questions.length === 0)
-    );
-
-    const totalQ = leafQuestions.length;
-    const totalM = leafQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
-
-    const counts: Record<string, number> = { L1: 0, L2: 0, L3: 0, L4: 0, L5: 0, L6: 0 };
-    const marksSum: Record<string, number> = { L1: 0, L2: 0, L3: 0, L4: 0, L5: 0, L6: 0 };
-
-    leafQuestions.forEach((q) => {
-      const lvlStr = (q.effective_bloom_level || q.ai_bloom_level || '').toUpperCase();
-      let code = 'L1';
-      if (lvlStr.includes('UNDERSTAND') || lvlStr === 'L2') code = 'L2';
-      else if (lvlStr.includes('APPLY') || lvlStr === 'L3') code = 'L3';
-      else if (lvlStr.includes('ANALYZE') || lvlStr === 'L4') code = 'L4';
-      else if (lvlStr.includes('EVALUATE') || lvlStr === 'L5') code = 'L5';
-      else if (lvlStr.includes('CREATE') || lvlStr === 'L6') code = 'L6';
-      else code = 'L1';
-
-      counts[code] = (counts[code] || 0) + 1;
-      marksSum[code] = (marksSum[code] || 0) + (q.marks || 0);
-    });
-
-    return levels.map((lvl) => {
-      const qCnt = counts[lvl.code] || 0;
-      const mSum = marksSum[lvl.code] || 0;
-      return {
-        bloom_level: lvl.code,
-        name: lvl.name,
-        question_count: qCnt,
-        question_count_percentage: totalQ > 0 ? Number(((qCnt / totalQ) * 100).toFixed(2)) : 0,
-        total_marks: mSum,
-        marks_percentage: totalM > 0 ? Number(((mSum / totalM) * 100).toFixed(2)) : 0,
-      };
-    });
-  }, [questions]);
+  const paperBloomDistributions = useMemo<BloomDistributionItem[]>(() => computePaperBloomDistributions(questions), [questions]);
 
   const handleSaveOverride = async (questionId: number, payload: QuestionPatchPayload) => {
     const updated = await patchQuestion.mutateAsync({ questionId, payload });
@@ -204,6 +150,7 @@ export const AnalysisResults: React.FC = () => {
         isOpen={selectedQuestion !== null}
         onClose={() => setSelectedQuestion(null)}
         onSaveOverride={handleSaveOverride}
+        relatedContent={selectedQuestion ? <SimilarQuestions questionId={selectedQuestion.id} /> : null}
       />
     </div>
   );

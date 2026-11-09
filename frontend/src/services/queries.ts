@@ -9,6 +9,10 @@ export function useExamTypesQuery() {
   return useQuery({ queryKey: ['papers', 'exam-types'], queryFn: () => analysisApi.getExamTypes() });
 }
 
+export function useSimilarQuestionsQuery(questionId: number) {
+  return useQuery({ queryKey: ['questions', questionId, 'similar'], queryFn: () => analysisApi.getSimilarQuestions(questionId) });
+}
+
 export function usePaperStatusQuery(paperId?: number) {
   return useQuery({
     queryKey: ['papers', paperId, 'status'],
@@ -110,6 +114,7 @@ export function usePatchQuestionMutation(paperId: number) {
       });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.performanceEstimate(paperId) });
+      queryClient.invalidateQueries({ queryKey: ['questions', updated.id] });
     },
   });
 }

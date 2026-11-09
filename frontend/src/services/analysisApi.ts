@@ -1,7 +1,7 @@
 import { apiClient } from './api';
 import { isMock } from './mockMode';
 import { PaperUploadPayload, QuestionPaper, PerformanceEstimate, PaperStatus } from '../types/paper';
-import { QuestionAnalysis, QuestionPatchPayload } from '../types/question';
+import { QuestionAnalysis, QuestionPatchPayload, SimilarQuestion } from '../types/question';
 import { BloomAnalyticsData, TrendsAnalyticsData, OverviewAnalytics } from '../types/analytics';
 import { simulateMockLatency } from '../utils/latency';
 import {
@@ -14,6 +14,11 @@ import {
 } from './mockData';
 
 export const analysisApi = {
+  async getSimilarQuestions(questionId: number): Promise<SimilarQuestion[]> {
+    if (isMock()) return [];
+    const { data } = await apiClient.get<SimilarQuestion[]>(`/questions/${questionId}/similar`);
+    return data;
+  },
   async getPaperStatus(paperId: number): Promise<PaperStatus> {
     if (isMock()) return { paper_id: paperId, processing_status: 'COMPLETED', message: 'Done' };
     const { data } = await apiClient.get<PaperStatus>(`/papers/${paperId}/status`);

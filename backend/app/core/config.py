@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     # External AI Services
     GEMINI_API_KEY: Optional[str] = ""
+    GEMINI_MODEL_NAME: str = 'gemini-2.5-flash'
+    GEMINI_TIMEOUT_SECONDS: float = 10.0
 
     # Authentication & Security
     API_KEY: Optional[str] = None
@@ -110,6 +112,8 @@ class Settings(BaseSettings):
             missing.append("DATABASE_URL")
         if self.MAX_UPLOAD_SIZE_MB <= 0:
             missing.append("MAX_UPLOAD_SIZE_MB")
+        if not self.GEMINI_MODEL_NAME or self.GEMINI_TIMEOUT_SECONDS <= 0:
+            missing.append("GEMINI_MODEL_NAME/GEMINI_TIMEOUT_SECONDS")
         if self.MAX_REQUEST_BODY_SIZE_MB <= self.MAX_UPLOAD_SIZE_MB:
             missing.append("MAX_REQUEST_BODY_SIZE_MB (must exceed MAX_UPLOAD_SIZE_MB)")
         if self.UPLOAD_RATE_LIMIT_PER_MINUTE <= 0:

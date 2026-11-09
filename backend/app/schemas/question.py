@@ -1,18 +1,23 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class QuestionPatchSchema(BaseModel):
     """Schema for human overriding/correcting question fields."""
-    question_text: Optional[str] = Field(None, description="Human corrected question text")
+    question_text: Optional[str] = Field(None, min_length=1, max_length=20000, description="Human corrected question text")
     marks: Optional[float] = Field(None, ge=0.0, description="Human corrected marks")
-    topic_name: Optional[str] = Field(None, description="Human corrected topic name")
+    topic_name: Optional[str] = Field(None, min_length=1, max_length=255, description="Human corrected topic name")
     unit: Optional[str] = Field(None, description="Human corrected unit e.g. Unit 1")
     bloom_level: Optional[str] = Field(None, description="Human corrected Bloom level e.g. L1, L2... L6")
     question_type: Optional[str] = Field(None, description="Human corrected question type")
     co_mapping: Optional[Dict[str, List[str]]] = Field(None, description="CO/PO outcome mapping dict")
-    choice_group: Optional[str] = Field(None, description="Optional choice group identifier")
+    choice_group: Optional[str] = Field(None, max_length=100, description="Optional choice group identifier")
+
+    @field_validator('question_text', 'topic_name', mode='before')
+    @classmethod
+    def strip_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
 
 class QuestionSimilarityResponse(BaseModel):

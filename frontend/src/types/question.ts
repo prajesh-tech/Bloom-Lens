@@ -30,6 +30,9 @@ export interface QuestionAnalysis {
     cognitive_operation?: string;
     component_scores?: Record<string, number>;
     candidate_scores?: Record<string, number>;
+    needs_reanalysis?: boolean;
+    confidence_kind?: string;
+    embedding_backend?: { backend: string; model: string; version: string };
   } | null;
 
   sub_questions?: QuestionAnalysis[];
@@ -42,6 +45,19 @@ export interface QuestionPatchPayload {
   unit?: string;
   bloom_level?: string;
   question_type?: string;
+  co_mapping?: Record<string, string[]> | null;
+  choice_group?: string | null;
+}
+
+export interface SimilarQuestion {
+  id: number;
+  source_question_id: number;
+  target_question_id: number;
+  target_question_text?: string | null;
+  target_question_number?: string | null;
+  similarity_score: number;
+  similarity_type: string;
+  classification: string;
 }
 
 export interface QuestionFilterState {

@@ -20,7 +20,8 @@ from app.services.question_extraction_service import QuestionExtractionService
 from app.services.topic_service import TopicService
 from app.services.bloom_service import BloomService
 from app.services.similarity_service import SimilarityService
-from app.services.embedding_service import EmbeddingService
+from app.services.embedding_service import EmbeddingService, get_embedding_backend_metadata, embedding_backend_identity
+import numpy as np
 from app.utils.text_cleaner import extract_year_from_text, sanitize_display_text
 
 async def remove_stored_file(path: str) -> None:
@@ -43,6 +44,7 @@ async def process_paper(paper_id: int) -> None:
                 return
             subject = await db.get(Subject, paper.subject_id)
             subject_name = subject.name
+            subject_topics = list((await db.execute(select(Topic.name).where(Topic.subject_id == subject.id, Topic.is_managed.is_(True)))).scalars())
             maximum_marks = paper.maximum_marks
             file_path = paper.stored_file_path
             orig_filename = paper.original_filename
@@ -90,7 +92,7 @@ async def process_paper(paper_id: int) -> None:
         def _classify_question(q_text: str, subj_name: str):
             """Runs all CPU-bound classifiers for one question in a worker thread."""
             unit_val = TopicService.identify_unit(q_text)
-            topic_name, topic_conf = TopicService.identify_topic(q_text, subj_name)
+            topic_name, topic_conf = TopicService.identify_topic(q_text, subj_name, subject_topics)
             q_type, _ = TopicService.classify_question_type(q_text)
             bloom_res = BloomService.classify_question(q_text)
             return unit_val, topic_name, topic_conf, q_type, bloom_res
@@ -219,62 +221,58 @@ async def process_paper(paper_id: int) -> None:
                 db.add_all(new_topic_links)
 
             await db.commit()
+        # Snapshot the same-subject corpus, then close the session before embedding.
         async with AsyncSessionLocal() as db:
-            # 10. Similarity Engine.
-            #     Fix 2: Embed the entire historical corpus in ONE batched call before the loop.
-            #     Reuse pre-built vectors for every new question — eliminates O(N²) embeddings.
-            corpus_stmt = select(Question).where(Question.question_paper_id != paper.id)
-            corpus_res = await db.execute(corpus_stmt)
-            corpus_questions_raw = [
-                {
-                    "id": q.id,
-                    "question_number": q.question_number,
-                    "original_text": q.original_text,
-                    "normalized_text": q.normalized_text,
-                }
-                for q in corpus_res.scalars().all()
-            ]
-
+            corpus = list((await db.execute(select(Question).join(QuestionPaper).where(
+                Question.question_paper_id != paper_id, QuestionPaper.subject_id == paper.subject_id,
+                QuestionPaper.processing_status == "COMPLETED"))).scalars())
+        new_vectors = await asyncio.to_thread(EmbeddingService.get_embeddings_batch, [q.original_text for q in created_questions])
+        metadata = get_embedding_backend_metadata()
+        backend = embedding_backend_identity(metadata)
+        missing = [q for q in corpus if q.embedding_vector is None]
+        historical_vectors = await asyncio.to_thread(EmbeddingService.get_embeddings_batch, [q.original_text for q in missing]) if missing else []
+        if embedding_backend_identity(get_embedding_backend_metadata()) != backend:
+            # A model failure changed vector space while backfilling: regenerate this batch consistently.
+            new_vectors = await asyncio.to_thread(EmbeddingService.get_embeddings_batch, [q.original_text for q in created_questions])
+            historical_vectors = await asyncio.to_thread(EmbeddingService.get_embeddings_batch, [q.original_text for q in missing]) if missing else []
+            metadata = get_embedding_backend_metadata()
+            backend = embedding_backend_identity(metadata)
+        backfill = {q.id: vector for q, vector in zip(missing, historical_vectors) if vector is not None}
+        corpus_data = []
+        for question in corpus:
+            if question.id in backfill:
+                vector = backfill[question.id]
+            elif question.embedding_backend == backend:
+                vector = np.asarray(question.embedding_vector, dtype=np.float32)
+            else:
+                vector = None  # Exact text remains comparable; semantic vectors do not.
+            corpus_data.append(({"id": question.id, "question_number": question.question_number,
+                "original_text": question.original_text, "normalized_text": question.normalized_text,
+                "embedding_backend": backend if question.id in backfill else question.embedding_backend}, vector))
+        index = await asyncio.to_thread(SimilarityService.build_index, corpus_data, backend)
         similarity_records = []
-        if corpus_questions_raw:
-            corpus_texts = [q["original_text"] for q in corpus_questions_raw]
-            corpus_vecs = await asyncio.to_thread(
-                EmbeddingService.get_embeddings_batch, corpus_texts
-            )
-            # Drop any questions whose embedding failed
-            corpus_data = [
-                (q, vec)
-                for q, vec in zip(corpus_questions_raw, corpus_vecs)
-                if vec is not None
-            ]
-
-            # Embed all new questions in a single batched call too
-            new_q_texts = [q.original_text for q in created_questions]
-            new_q_vecs = await asyncio.to_thread(
-                EmbeddingService.get_embeddings_batch, new_q_texts
-            )
-
-            similarity_records: List[QuestionSimilarity] = []
-            for new_q, new_q_vec in zip(created_questions, new_q_vecs):
-                if new_q_vec is None:
-                    continue
-                similarities = await asyncio.to_thread(
-                    SimilarityService.find_similar_questions_prebuilt,
-                    new_q.original_text,
-                    new_q_vec,
-                    corpus_data,
-                )
-                for sim in similarities:
-                    similarity_records.append(
-                        QuestionSimilarity(
-                            source_question_id=new_q.id,
-                            target_question_id=sim["question_id"],
-                            similarity_score=sim["similarity_score"],
-                            similarity_type=sim["similarity_type"],
-                            classification=sim["classification"],
-                        )
-                    )
-
+        for question, vector in zip(created_questions, new_vectors):
+            if vector is None:
+                continue
+            matches = await asyncio.to_thread(index.search, question.original_text, vector)
+            similarity_records.extend(QuestionSimilarity(source_question_id=question.id,
+                target_question_id=match["question_id"], similarity_score=match["similarity_score"],
+                similarity_type=match["similarity_type"], classification=match["classification"])
+                for match in matches)
+        async with AsyncSessionLocal() as db:
+            for question, vector in zip(created_questions, new_vectors):
+                entity = await db.get(Question, question.id)
+                if entity is not None and vector is not None:
+                    entity.embedding_vector = vector.tolist()
+                    entity.embedding_backend = backend
+                    entity.embedding_metadata = metadata
+                    entity.ai_analysis_metadata = {**(entity.ai_analysis_metadata or {}),
+                        "embedding_backend": metadata, "confidence_kind": "uncalibrated_score"}
+            for question_id, vector in backfill.items():
+                entity = await db.get(Question, question_id)
+                if entity is not None:
+                    entity.embedding_vector, entity.embedding_backend, entity.embedding_metadata = vector.tolist(), backend, metadata
+            await db.commit()
 
         async with AsyncSessionLocal() as db:
             paper = await db.get(QuestionPaper, paper_id)

@@ -1,5 +1,6 @@
+import re
 from typing import List, Dict, Any, Optional
-from sqlalchemy import select, func, distinct, and_
+from sqlalchemy import select, func, distinct, and_, union
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -50,7 +51,7 @@ class AnalyticsService:
         topic_stmt = select(func.count(distinct(Topic.id)))
         marks_stmt = select(func.coalesce(func.sum(Question.marks), 0.0)).where(Question.id.in_(leaf_ids))
 
-        if subject_id:
+        if subject_id is not None:
             paper_stmt = paper_stmt.where(QuestionPaper.subject_id == subject_id)
             question_stmt = question_stmt.join(QuestionPaper).where(QuestionPaper.subject_id == subject_id)
             subject_stmt = subject_stmt.where(Subject.id == subject_id)
@@ -99,7 +100,7 @@ class AnalyticsService:
             func.coalesce(func.sum(Question.marks), 0.0).label("m_sum"),
         ).where(Question.id.in_(leaf_ids)).group_by(Question.effective_bloom_level_id)
 
-        if subject_id:
+        if subject_id is not None:
             query = query.join(QuestionPaper).where(QuestionPaper.subject_id == subject_id)
 
         results = (await db.execute(query)).all()
@@ -140,34 +141,23 @@ class AnalyticsService:
     async def get_topic_analytics(db: AsyncSession, subject_id: Optional[int] = None) -> TopicAnalyticsResponse:
         """Computes topic frequency and Bloom level breakdown per topic."""
         leaf_ids = await AnalyticsService._leaf_ids(db, subject_id)
-        query = (
-            select(
-                Topic.name.label("topic_name"),
-                func.count(distinct(Question.id)).label("frequency"),
-                func.coalesce(func.sum(Question.marks), 0.0).label("total_marks"),
-            )
-            .join(QuestionTopic, QuestionTopic.topic_id == Topic.id)
-            .join(Question, QuestionTopic.question_id == Question.id)
-            .where(Question.id.in_(leaf_ids))
-            .group_by(Topic.name)
-            .order_by(func.count(distinct(Question.id)).desc())
-        )
-
-        if subject_id:
+        query = (select(Topic.id, Topic.name, Question.effective_bloom_level_id,
+                        func.count(distinct(Question.id)), func.coalesce(func.sum(Question.marks), 0.0))
+                 .join(QuestionTopic, QuestionTopic.topic_id == Topic.id)
+                 .join(Question, QuestionTopic.question_id == Question.id)
+                 .where(Question.id.in_(leaf_ids))
+                 .group_by(Topic.id, Topic.name, Question.effective_bloom_level_id))
+        if subject_id is not None:
             query = query.where(Topic.subject_id == subject_id)
-
-        rows = (await db.execute(query)).all()
-
-        items: List[TopicFrequencyItem] = []
-        for r in rows:
-            items.append(
-                TopicFrequencyItem(
-                    topic=r.topic_name,
-                    frequency=r.frequency,
-                    total_marks=float(r.total_marks),
-                    bloom_breakdown={},
-                )
-            )
+        levels = {level.id: level.code for level in (await db.execute(select(BloomLevel))).scalars()}
+        items_by_id = {}
+        for topic_id, name, level, count, marks in (await db.execute(query)).all():
+            item = items_by_id.setdefault(topic_id, TopicFrequencyItem(topic_id=topic_id, topic=name, frequency=0, total_marks=0))
+            item.frequency += count
+            item.total_marks += float(marks)
+            code = levels.get(level, 'UNKNOWN')
+            item.bloom_breakdown[code] = item.bloom_breakdown.get(code, 0) + count
+        items = sorted(items_by_id.values(), key=lambda item: (-item.frequency, item.topic_id))
 
         return TopicAnalyticsResponse(uncertain_paper_ids=[p.id for p in await AnalyticsService._optional_papers(db, subject_id)], topics=items)
 
@@ -183,12 +173,21 @@ class AnalyticsService:
             raise ValueError(f"Invalid metric_type '{metric_type}'. Must be 'count' or 'marks_weighted'.")
 
         leaf_ids = await AnalyticsService._leaf_ids(db, subject_id)
-        papers_query = select(QuestionPaper).order_by(QuestionPaper.upload_timestamp.asc())
-        if subject_id:
+        papers_query = select(QuestionPaper)
+        if subject_id is not None:
             papers_query = papers_query.where(QuestionPaper.subject_id == subject_id)
 
         papers_res = await db.execute(papers_query)
-        papers = papers_res.scalars().all()
+        def exam_order(paper):
+            value = paper.year_date or ''
+            year = re.search(r"\b(?:19|20)\d{2}\b", value)
+            month_names = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+            month = next((index + 1 for index, name in enumerate(month_names) if name in value.lower()), 0)
+            numeric = re.search(r"(?:19|20)\d{2}-(\d{2})(?:-(\d{2}))?", value)
+            if numeric:
+                month = int(numeric.group(1))
+            return (int(year.group()) if year else 9999, month, int(numeric.group(2) or 0) if numeric else 0, paper.id)
+        papers = sorted(papers_res.scalars().all(), key=exam_order)
 
         bloom_levels_res = await db.execute(select(BloomLevel))
         bloom_levels = {bl.id: bl.code for bl in bloom_levels_res.scalars().all()}
@@ -225,7 +224,9 @@ class AnalyticsService:
             for r in q_rows:
                 if not r.effective_bloom_level_id:
                     continue
-                code = bloom_levels.get(r.effective_bloom_level_id, "L1")
+                code = bloom_levels.get(r.effective_bloom_level_id)
+                if code not in trend_vals:
+                    continue
                 if metric_type == "count":
                     trend_vals[code] = round((r.q_count / tot_cnt * 100.0), 2) if tot_cnt > 0 else 0.0
                 else:  # marks_weighted
@@ -238,6 +239,7 @@ class AnalyticsService:
                     paper=paper_label,
                     year=p.year_date,
                     examination_type=p.examination_type,
+                    unknown_question_count=sum(r.q_count for r in q_rows if bloom_levels.get(r.effective_bloom_level_id) not in trend_vals),
                     **trend_vals,
                 )
             )
@@ -248,14 +250,14 @@ class AnalyticsService:
     async def get_question_analytics(db: AsyncSession, subject_id: Optional[int] = None) -> QuestionAnalyticsResponse:
         """Returns analytics on repeated questions, highest-mark questions, and question-type distribution."""
         leaf_ids = await AnalyticsService._leaf_ids(db, subject_id)
-        # 1. Similarity counts
-        rep_query = select(func.count(QuestionSimilarity.id)).where(QuestionSimilarity.classification == "exact_repeat")
-        sim_query = select(func.count(QuestionSimilarity.id)).where(QuestionSimilarity.classification == "potentially_repeated")
-
-        rep_query = rep_query.where(QuestionSimilarity.source_question_id.in_(leaf_ids), QuestionSimilarity.target_question_id.in_(leaf_ids))
-        sim_query = sim_query.where(QuestionSimilarity.source_question_id.in_(leaf_ids), QuestionSimilarity.target_question_id.in_(leaf_ids))
-        repeated_cnt = (await db.execute(rep_query)).scalar() or 0
-        similar_cnt = (await db.execute(sim_query)).scalar() or 0
+        async def unique_participants(classifications):
+            filters = (QuestionSimilarity.classification.in_(classifications),
+                       QuestionSimilarity.source_question_id.in_(leaf_ids), QuestionSimilarity.target_question_id.in_(leaf_ids))
+            participants = union(select(QuestionSimilarity.source_question_id).where(*filters),
+                                 select(QuestionSimilarity.target_question_id).where(*filters)).subquery()
+            return (await db.execute(select(func.count()).select_from(participants))).scalar() or 0
+        repeated_cnt = await unique_participants(['exact_repeat'])
+        similar_cnt = await unique_participants(['near_duplicate', 'potentially_repeated'])
 
         # 2. Highest mark questions
         high_marks_query = (
@@ -264,7 +266,7 @@ class AnalyticsService:
             .order_by(Question.marks.desc())
             .limit(5)
         )
-        if subject_id:
+        if subject_id is not None:
             high_marks_query = high_marks_query.join(QuestionPaper).where(QuestionPaper.subject_id == subject_id)
 
         high_qs = (await db.execute(high_marks_query)).scalars().all()
@@ -283,7 +285,7 @@ class AnalyticsService:
         qt_query = select(
             Question.question_type, func.count(Question.id)
         ).where(Question.id.in_(leaf_ids)).group_by(Question.question_type)
-        if subject_id:
+        if subject_id is not None:
             qt_query = qt_query.join(QuestionPaper).where(QuestionPaper.subject_id == subject_id)
 
         qt_rows = (await db.execute(qt_query)).all()

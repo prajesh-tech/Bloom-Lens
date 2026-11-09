@@ -1,0 +1,62 @@
+{
+  "questions": 150,
+  "subjects": [
+    "Algorithms",
+    "Databases",
+    "Networks"
+  ],
+  "accuracy": 0.9866666666666667,
+  "confusion_matrix": {
+    "L1": {
+      "L1": 30,
+      "L2": 0,
+      "L3": 0,
+      "L4": 0,
+      "L5": 0,
+      "L6": 0
+    },
+    "L2": {
+      "L1": 0,
+      "L2": 28,
+      "L3": 0,
+      "L4": 0,
+      "L5": 1,
+      "L6": 1
+    },
+    "L3": {
+      "L1": 0,
+      "L2": 0,
+      "L3": 30,
+      "L4": 0,
+      "L5": 0,
+      "L6": 0
+    },
+    "L4": {
+      "L1": 0,
+      "L2": 0,
+      "L3": 0,
+      "L4": 15,
+      "L5": 0,
+      "L6": 0
+    },
+    "L5": {
+      "L1": 0,
+      "L2": 0,
+      "L3": 0,
+      "L4": 0,
+      "L5": 15,
+      "L6": 0
+    },
+    "L6": {
+      "L1": 0,
+      "L2": 0,
+      "L3": 0,
+      "L4": 0,
+      "L5": 0,
+      "L6": 30
+    }
+  },
+  "mode": "internal authored templates; hashing embeddings; Gemini disabled",
+  "dataset_sha256": "1219d1ad2950c5e9e9560a7229fa9bd22d1b87907aae01a15d9de5eaba54bc73",
+  "classifier_revision": "be8bf87"
+}

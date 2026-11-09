@@ -3,25 +3,12 @@ from typing import Tuple, Optional, List, Dict
 from app.core.logging import logger
 
 # Knowledge domain topic mapping dictionary (Computer Science domain focused for V1)
-TOPIC_RULES: Dict[str, Dict[str, List[str]]] = {
-    "Database Systems": {
-        "Normalization & Normal Forms": ["normalization", "1nf", "2nf", "3nf", "bcnf", "4nf", "functional dependency"],
-        "Transaction Management": ["acid", "transaction", "concurrency", "commit", "rollback", "isolation", "deadlock"],
-        "Indexing & Hashing": ["b-tree", "b+ tree", "indexing", "hashing", "primary key", "foreign key"],
-        "Relational Algebra & SQL": ["sql", "join", "select", "group by", "relational algebra", "query"],
-    },
-    "Data Structures": {
-        "Trees & Binary Search Trees": ["binary tree", "bst", "avl", "red-black tree", "tree traversal", "inorder", "preorder"],
-        "Graphs & Graph Algorithms": ["graph", "bfs", "dfs", "dijkstra", "shortest path", "spanning tree", "kruskal", "prim"],
-        "Sorting & Searching": ["quicksort", "mergesort", "heapsort", "binary search", "hashing", "sorting"],
-        "Stacks & Queues": ["stack", "queue", "push", "pop", "enqueue", "dequeue", "priority queue"],
-    },
-    "General Computer Science": {
-        "Software Design & Architecture": ["design pattern", "architecture", "solid", "coupling", "cohesion", "uml"],
-        "Operating Systems": ["process", "thread", "scheduling", "paging", "virtual memory", "deadlock", "mutex"],
-        "Computer Networks": ["tcp/ip", "osi model", "ip address", "routing", "http", "socket", "dns"],
-    },
-}
+from pathlib import Path
+import json
+from app.services.embedding_service import EmbeddingService
+import numpy as np
+
+TOPIC_RULES = json.loads((Path(__file__).parents[1] / "data" / "topic_rules.json").read_text())
 
 
 class TopicService:
@@ -38,9 +25,8 @@ class TopicService:
 
         # Pattern matching explicit unit/module mentions
         match = re.search(
-            r"\b(?:Unit|Module|Chapter)\s*[-:]?\s*([0-9IVXLCDM]+)\b",
+            r"\b(?i:Unit|Module|Chapter)\s*[-:]?\s*([0-9]+|[IVXLCDM]+)\b",
             text,
-            re.IGNORECASE,
         )
         if match:
             unit_val = match.group(1).upper()
@@ -49,7 +35,7 @@ class TopicService:
         return None
 
     @staticmethod
-    def identify_topic(text: str, subject_name: Optional[str] = None) -> Tuple[Optional[str], float]:
+    def identify_topic(text: str, subject_name: Optional[str] = None, subject_topics: Optional[List[str]] = None) -> Tuple[Optional[str], float]:
         """
         Identifies primary topic for a question based on key technical domain concepts.
         Returns Tuple[topic_name, confidence_score]. Returns (None, 0.0) if confidence < threshold.
@@ -58,6 +44,11 @@ class TopicService:
             return None, 0.0
 
         text_lower = text.lower()
+
+        if subject_topics:
+            for name in subject_topics:
+                if re.search(r"(?<!\w)" + re.escape(name.lower()) + r"(?!\w)", text_lower):
+                    return name, 0.9
 
         # Check matched subject or search across all rules
         domains_to_check = []
@@ -72,16 +63,24 @@ class TopicService:
 
         for domain in domains_to_check:
             for topic, keywords in domain.items():
-                matches = sum(1 for kw in keywords if kw in text_lower)
+                matches = sum(1 for kw in keywords if re.search(r"(?<!\w)" + re.escape(kw) + r"(?!\w)", text_lower))
                 if matches > 0:
                     score = min(1.0, 0.5 + (matches * 0.2))
                     if score > best_score:
                         best_score = score
                         best_topic = topic
 
-        if best_score >= 0.5:
+        if best_score >= 0.5 and (not subject_topics or best_topic in subject_topics):
             return best_topic, best_score
 
+        if subject_topics:
+            vectors = EmbeddingService.get_embeddings_batch([text, *subject_topics])
+            if vectors and vectors[0] is not None:
+                similarities = [(float(np.dot(vectors[0], vector)), name) for vector, name in zip(vectors[1:], subject_topics) if vector is not None]
+                if similarities:
+                    score, name = max(similarities)
+                    if score >= 0.5:
+                        return name, score
         return None, 0.0
 
     @staticmethod

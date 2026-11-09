@@ -19,6 +19,9 @@ class Question(Base):
     question_number: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., Q1, Q1(a)
     original_text: Mapped[str] = mapped_column(Text, nullable=False)
     normalized_text: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding_vector: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    embedding_backend: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    embedding_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Marks details
     marks: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
