@@ -44,6 +44,7 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({ currentS
           return (
             <div
               key={step.number}
+              aria-current={isCurrent ? 'step' : undefined}
               className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                 isCurrent
                   ? 'bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 font-medium text-slate-900 dark:text-white shadow-xs'

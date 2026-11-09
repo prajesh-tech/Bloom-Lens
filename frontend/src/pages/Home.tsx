@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { SubjectFilter } from '../components/common/SubjectFilter';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -11,7 +12,8 @@ import { UploadCloud, BrainCircuit, FileCheck2, Award, ArrowRight, Layers, BookO
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { overview, bloom, history } = useDashboardQueries();
+  const [subjectId, setSubjectId] = useState<number>();
+  const { overview, bloom, history } = useDashboardQueries(subjectId);
   const loading = overview.isLoading || bloom.isLoading || history.isLoading;
   const overviewData = overview.data;
   const bloomAnalytics = bloom.data;
@@ -19,6 +21,9 @@ export const Home: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in">
+      <SubjectFilter value={subjectId} onChange={setSubjectId} />
+      {(overview.isError || bloom.isError || history.isError) && <p role="alert">Unable to load dashboard data. Please retry or check your connection.</p>}
+      {!!bloom.data?.uncertain_paper_ids?.length && <p role="status">Optional question choices make these distributions uncertain.</p>}
       {/* Hero Welcome Banner */}
       <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">

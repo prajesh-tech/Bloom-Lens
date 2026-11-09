@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BrainCircuit, UploadCloud, History, Settings, Home, Menu, X, Sun, Moon } from 'lucide-react';
+import { BrainCircuit, UploadCloud, History, Settings, Home, Menu, X, Sun, Moon, BarChart3 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { useTheme } from '../../context/ThemeContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ export const Navbar: React.FC = () => {
     { label: 'Overview', path: '/', icon: Home },
     { label: 'Analyze Paper', path: '/analyze', icon: UploadCloud },
     { label: 'History', path: '/history', icon: History },
+    { label: 'Analytics', path: '/analytics', icon: BarChart3 },
     { label: 'Settings', path: '/settings', icon: Settings },
   ];
 
@@ -82,7 +83,7 @@ export const Navbar: React.FC = () => {
                 </Badge>
               ) : (
                 <Badge variant="success" size="sm" className="font-mono text-[11px]">
-                  ● Backend Connected
+                  ● Real API
                 </Badge>
               )}
             </div>

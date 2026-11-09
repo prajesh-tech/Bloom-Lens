@@ -78,6 +78,7 @@ async def upload_question_paper(
 
 @router.get("", response_model=PaperListResponse)
 async def list_question_papers(
+    subject_id: Optional[int] = Query(None, ge=1),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -85,6 +86,8 @@ async def list_question_papers(
     """Lists question papers with pagination metadata."""
     offset = (page - 1) * limit
     total_stmt = select(func.count(QuestionPaper.id))
+    if subject_id is not None:
+        total_stmt = total_stmt.where(QuestionPaper.subject_id == subject_id)
     total = (await db.execute(total_stmt)).scalar() or 0
 
     query = (
@@ -94,6 +97,8 @@ async def list_question_papers(
         .offset(offset)
         .limit(limit)
     )
+    if subject_id is not None:
+        query = query.where(QuestionPaper.subject_id == subject_id)
     result = await db.execute(query)
     papers = result.scalars().all()
 

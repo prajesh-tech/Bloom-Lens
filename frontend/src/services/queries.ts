@@ -22,20 +22,41 @@ export function usePaperStatusQuery(paperId?: number) {
   });
 }
 
-export function useDashboardQueries() {
+export function useSubjectsQuery() {
+  return useQuery({ queryKey: ['subjects'], queryFn: () => analysisApi.getSubjects() });
+}
+
+export function useTopicAnalyticsQuery(subjectId?: number) {
+  return useQuery({ queryKey: ['analytics', 'topics', subjectId ?? 'all'], queryFn: () => analysisApi.getTopicAnalytics(subjectId) });
+}
+
+export function useQuestionAnalyticsQuery(subjectId?: number) {
+  return useQuery({ queryKey: ['analytics', 'questions', subjectId ?? 'all'], queryFn: () => analysisApi.getQuestionAnalytics(subjectId) });
+}
+
+export function useTrendsQuery(metricType: 'count' | 'marks_weighted', subjectId?: number) {
+  return useQuery({ queryKey: queryKeys.trends(metricType, subjectId), queryFn: () => analysisApi.getTrendsAnalytics(metricType, subjectId) });
+}
+
+export function useQuestionRevisionsQuery(questionId: number) {
+  return useQuery({ queryKey: ['questions', questionId, 'revisions'], queryFn: () => analysisApi.getQuestionRevisions(questionId) });
+}
+
+export function useBloomAnalyticsQuery(subjectId?: number) {
+  return useQuery({ queryKey: queryKeys.bloomAnalytics(subjectId), queryFn: () => analysisApi.getBloomAnalytics(subjectId) });
+}
+
+export function useDashboardQueries(subjectId?: number) {
   const overview = useQuery({
-    queryKey: queryKeys.overview,
-    queryFn: () => analysisApi.getOverviewAnalytics(),
+    queryKey: queryKeys.overview(subjectId),
+    queryFn: () => analysisApi.getOverviewAnalytics(subjectId),
   });
 
-  const bloom = useQuery({
-    queryKey: queryKeys.bloomAnalytics(),
-    queryFn: () => analysisApi.getBloomAnalytics(),
-  });
+  const bloom = useBloomAnalyticsQuery(subjectId);
 
   const history = useQuery({
-    queryKey: queryKeys.history(1, 5),
-    queryFn: () => historyApi.getHistory(1, 5),
+    queryKey: queryKeys.history(1, 5, subjectId),
+    queryFn: () => historyApi.getHistory(1, 5, subjectId),
   });
 
   return { overview, bloom, history };

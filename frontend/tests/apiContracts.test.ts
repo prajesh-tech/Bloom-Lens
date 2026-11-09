@@ -21,3 +21,18 @@ describe('real API defaults', () => {
     expect(await analysisApi.getExamTypes()).toEqual(['Internal', 'Mid-Term']);
   });
 });
+
+it('passes subject filters, revision and similarity paths to Axios', async () => {
+  vi.stubEnv('VITE_USE_MOCK_API', 'false');
+  const get = vi.spyOn(apiClient, 'get').mockResolvedValue({ data: [] });
+  await analysisApi.getTopicAnalytics(9);
+  expect(get).toHaveBeenLastCalledWith('/analytics/topics', { params: { subject_id: 9 } });
+  await analysisApi.getTrendsAnalytics('count', 9);
+  expect(get).toHaveBeenLastCalledWith('/analytics/trends', { params: { metric_type: 'count', subject_id: 9 } });
+  await historyApi.getHistory(2, 5, 9);
+  expect(get).toHaveBeenLastCalledWith('/papers', { params: { page: 2, limit: 5, subject_id: 9 } });
+  await analysisApi.getQuestionRevisions(3);
+  expect(get).toHaveBeenLastCalledWith('/questions/3/revisions');
+  await analysisApi.getSimilarQuestions(3);
+  expect(get).toHaveBeenLastCalledWith('/questions/3/similar');
+});

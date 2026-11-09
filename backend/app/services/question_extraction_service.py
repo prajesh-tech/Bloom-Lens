@@ -134,7 +134,9 @@ class QuestionExtractionService:
                 has_co_po = bool(re.search(r"\[CO\d+,?\s*PO\d+\]", line, re.IGNORECASE))
                 is_verb_start = first_word in cls.QUESTION_VERBS
 
-                follows_marks = bool(current_block and MarksService.extract_marks(" ".join(current_block["raw_lines"]))[0] is not None)
+                previous_line = current_block["raw_lines"][-1] if current_block and current_block["raw_lines"] else ""
+                follows_marks = (MarksService.extract_marks(previous_line)[0] is not None and
+                    bool(re.search(r"(?:\d+(?:\.\d+)?\s*(?:marks?|m)\s*[\])]?|\d+(?:\.\d+)?\s*[\])])\s*[.;]?\s*$", previous_line, re.IGNORECASE)))
                 if (not has_numbering or follows_marks) and (is_verb_start or has_co_po) and not line.lower().startswith("note:") and not line.lower().startswith("answer the following"):
                     q_num_match = f"Q{auto_q_counter}"
                     is_sub = False

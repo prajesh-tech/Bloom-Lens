@@ -5,6 +5,8 @@ export interface QuestionAnalysis {
   question_number: string;
   original_text: string;
   normalized_text?: string;
+  co_mapping?: Record<string, string[]> | null;
+  choice_group?: string | null;
   marks?: number | null;
   marks_confidence?: 'high' | 'medium' | 'low' | null;
 
@@ -58,6 +60,15 @@ export interface SimilarQuestion {
   similarity_score: number;
   similarity_type: string;
   classification: string;
+}
+
+export interface QuestionRevision {
+  id: number;
+  question_id: number | null;
+  acting_user: string;
+  created_at: string;
+  old_value: Record<string, unknown>;
+  new_value: Record<string, unknown>;
 }
 
 export interface QuestionFilterState {

@@ -1,6 +1,7 @@
 import { BloomLevel } from './bloom';
 
 export interface OverviewAnalytics {
+  uncertain_paper_ids?: number[];
   papers_analyzed: number;
   questions_analyzed: number;
   subjects_count: number;
@@ -18,12 +19,14 @@ export interface BloomDistributionItem {
 }
 
 export interface BloomAnalyticsData {
+  uncertain_paper_ids?: number[];
   distributions: BloomDistributionItem[];
   total_questions: number;
   total_marks: number;
 }
 
 export interface TopicFrequencyItem {
+  topic_id?: number;
   topic: string;
   frequency: number;
   total_marks: number;
@@ -31,6 +34,7 @@ export interface TopicFrequencyItem {
 }
 
 export interface HistoricalTrendItem {
+  unknown_question_count?: number;
   paper_id?: number;
   paper: string;
   year?: string;
@@ -45,6 +49,25 @@ export interface HistoricalTrendItem {
 }
 
 export interface TrendsAnalyticsData {
+  uncertain_paper_ids?: number[];
   metric_type: 'count' | 'marks_weighted';
   trends: HistoricalTrendItem[];
+}
+
+export interface Subject {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface TopicAnalyticsData {
+  topics: TopicFrequencyItem[];
+  uncertain_paper_ids?: number[];
+}
+
+export interface QuestionAnalyticsData {
+  repeated_questions_count: number;
+  similar_questions_count: number;
+  highest_mark_questions: { id: number; question_number: string; text: string; marks: number; unit?: string | null }[];
+  question_type_distribution: Record<string, number>;
 }

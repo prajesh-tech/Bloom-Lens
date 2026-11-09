@@ -13,7 +13,7 @@ cannot be determined. Counts describe available leaf questions, not a guessed
 student selection. Overview marks use validated selectable totals where known.
 
 Marks require an explicit marks suffix, parenthesized M, or trailing bracketed
-number. Explicit allocation equations such as `2 x 5 = 10` remain supported for
+number. Explicit allocation headings such as `Answer the following questions 2 x 5 = 10` remain supported for
 compatibility; ordinary arithmetic and metre measurements are not allocations.
 DOCX paragraph/table order is preserved. Page count is null when pagination is
 not reliably known; the text is returned as one logical extraction block.

@@ -31,7 +31,10 @@ export const Analyze: React.FC = () => {
     if (pendingPaperId === undefined) return;
     const status = paperStatus.data;
     if (status?.processing_status === 'COMPLETED' || status?.processing_status === 'REVIEW_REQUIRED') {
-      queryClient.invalidateQueries({ queryKey: ['papers'] });
+      queryClient.invalidateQueries({
+        queryKey: ['papers'],
+        predicate: (query) => query.queryKey[query.queryKey.length - 1] !== 'status',
+      });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setPendingPaperId(undefined);
       toast.success('Question paper analyzed successfully!');

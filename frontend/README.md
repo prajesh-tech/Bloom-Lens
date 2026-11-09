@@ -8,7 +8,7 @@ BloomLens is an AI-powered historical question-paper analysis web application de
 
 ## Overview
 
-The BloomLens V1 frontend is a production-quality, responsive React + TypeScript application built with Vite and Tailwind CSS. It connects to the FastAPI backend API or runs in a standalone Mock API mode with simulated network latency to provide interactive analytics, Bloom taxonomy distributions, search/filtering, and human-in-the-loop review.
+The BloomLens V1 frontend is a responsive React + TypeScript application built with Vite and Tailwind CSS. It connects to the FastAPI backend API or runs in a standalone Mock API mode with simulated network latency to provide interactive analytics, Bloom taxonomy distributions, search/filtering, and human-in-the-loop review.
 
 ---
 
@@ -19,8 +19,8 @@ The BloomLens V1 frontend is a production-quality, responsive React + TypeScript
   - **Donut Chart**: Centralized total metric with dark custom tooltips and explicit color legends.
   - **Bar Chart**: Marks-Weighted cognitive distribution vs Question-Count distribution.
 - **Combined Search & Filter**: Real-time case-insensitive text/ID search combined with Revised Bloom Taxonomy level pill filters (L1 Remember to L6 Create).
-- **Slide-Over Question Drawer**: Right-side drawer for inspecting question details, sub-question hierarchy, AI reasoning, component scores, and human classification overrides.
-- **Analytical Typography System**: Slate light theme (`bg-slate-50`) paired with JetBrains Mono font for question IDs (`Q01`), marks (`05 marks`), percentages (`94%`), and confidence scores.
+- **Slide-Over Question Drawer**: Right-side drawer for inspecting question details, sub-question hierarchy, heuristic classifier signals, component scores, and human classification overrides.
+- **Analytical Typography System**: Slate light theme (`bg-slate-50`) paired with JetBrains Mono font for question IDs (`Q01`), marks (`05 marks`), percentages (`94%`), and uncalibrated classifier scores.
 - **Dual API Mode**: Connects to the FastAPI backend at `http://localhost:8000/api/v1` or operates offline in Mock Mode with simulated network latency (1500ms–2500ms).
 
 ---
@@ -31,7 +31,7 @@ The BloomLens V1 frontend is a production-quality, responsive React + TypeScript
 - **Styling & Icons**: Tailwind CSS, Lucide React (`lucide-react`)
 - **Data Visualization**: Recharts (`recharts`)
 - **Notifications**: Sonner (`sonner`)
-- **Routing**: React Router v6 (`react-router-dom`)
+- **Routing**: React Router v7 (`react-router-dom`)
 - **HTTP Client**: Axios (`axios`)
 - **Testing**: Vitest (`vitest`), React Testing Library, jsdom
 
@@ -89,7 +89,7 @@ frontend/
 
 ## Prerequisites
 
-- Node.js 18.x or 20.x
+- Node.js 20.19+ or 22.12+
 - npm 9.x+ or yarn
 
 ---
@@ -100,7 +100,7 @@ Clone the repository, navigate to the `frontend` directory, and install dependen
 
 ```bash
 cd frontend
-npm install
+npm ci
 ```
 
 Copy `.env.example` to create your local `.env` file:
@@ -118,18 +118,21 @@ Copy-Item .env.example .env
 
 ## Environment Configuration
 
+Leave the API host empty for the same-origin session gateway. The client appends
+`/api/v1`; do not include that path in `VITE_API_BASE_URL`.
+
 Configure environment variables in `.env`:
 
 ```env
 # Base URL of the BloomLens FastAPI backend
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=
 
 # Controls whether mock API mode with simulated network latency (1.5s-2.5s) is active
 # Set to 'true' for standalone demo mode or 'false' for real backend API connection
-VITE_USE_MOCK_API=true
+VITE_USE_MOCK_API=false
 ```
 
-> **Security**: Do not configure a shared API key in a `VITE_` variable; Vite bundles these values into public client code. The browser does not send server API keys. When backend authentication is enabled, protected actions require a trusted server-side integration. For local development only, backend authentication may be disabled.
+> **Security**: Do not configure a shared API key in a `VITE_` variable; Vite bundles these values into public client code. The browser does not send server API keys. With backend authentication enabled, sign in using an administrator-provisioned reviewer account. The same-origin backend handles sessions; Axios sends cookies and CSRF headers. Vite proxies `/api` locally and the deployment nginx serves the browser and backend under one origin.
 
 The server enforces upload limits using `MAX_UPLOAD_SIZE_MB`, `MAX_DOCX_UNCOMPRESSED_SIZE_MB`, `MAX_DOCUMENT_PAGES`, and `MAX_EXTRACTED_QUESTIONS`. The backend also limits concurrent question classification with `MAX_PARALLEL_QUESTION_CLASSIFICATIONS`; configure these server-side values to match deployment capacity.
 
@@ -143,7 +146,7 @@ To switch to the live Python FastAPI backend:
    Change `VITE_USE_MOCK_API` to `false`:
 
    ```env
-   VITE_API_BASE_URL=http://localhost:8000
+   VITE_API_BASE_URL=
    VITE_USE_MOCK_API=false
    ```
 
@@ -163,7 +166,7 @@ To switch to the live Python FastAPI backend:
 
 Once started, the top navigation header in the frontend will automatically display:
 
-- **`● Backend Connected`** (Green Badge) instead of `⚡ Mock Mode`.
+- **`Real API`** (configuration indicator, not a health check) instead of `⚡ Mock Mode`.
 
 ---
 
@@ -179,6 +182,8 @@ The application will be available at `http://localhost:3000`.
 
 ---
 
+Routes are loaded on demand and Recharts has its own chunk. Dashboard and analytics subject filters, topic breakdowns, similar-question results, and reviewer history use React Query. Uploads poll real stages, stop at terminal states, and offer status-request retry. Mock data is cloned before modification.
+
 ## Production Build
 
 Compile and build the static production bundle:
@@ -187,7 +192,7 @@ Compile and build the static production bundle:
 npm run build
 ```
 
-The compiled assets will be output to the `dist/` directory.
+The compiled assets will be output to the `dist/` directory. The build rejects an entry plus static JavaScript imports of 400 kB or more (uncompressed); lazy route/chart chunks are measured separately by Vite.
 
 ---
 

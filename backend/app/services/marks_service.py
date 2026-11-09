@@ -19,7 +19,7 @@ class MarksService:
         candidates = []
         patterns = [
             (r"[\[(](\d+(?:\.\d+)?)\s*\+\s*(\d+(?:\.\d+)?)\s*marks?[\])]", "sum", "high"),
-            (r"(?:^|\s)(\d+)\s*[x×*]\s*(\d+)\s*=\s*(\d+)(?=\s*$|\s*marks?\b)", "total", "high"),
+            (r"^answer\s+the\s+following\s+questions\s+(\d+)\s*[x×*]\s*(\d+)\s*=\s*(\d+)(?=\s*$|\s*marks?\b)", "total", "high"),
             (r"(?:^|[\s[(])(\d+(?:\.\d+)?)\s*(?:[-–]\s*)?marks?\b", "single", "high"),
             (r"[\[(](\d+(?:\.\d+)?)\s*M[\])]", "single", "high"),
             (r"[\[(](\d+(?:\.\d+)?)[\])]\s*$", "single", "medium"),

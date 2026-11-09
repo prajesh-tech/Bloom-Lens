@@ -2,7 +2,7 @@ import { apiClient } from './api';
 import { isMock } from './mockMode';
 import { QuestionPaper } from '../types/paper';
 import { simulateMockLatency } from '../utils/latency';
-import { MOCK_PAPERS } from './mockData';
+import { readMockState } from './mockStore';
 
 export interface HistoryListResponse {
   items: QuestionPaper[];
@@ -12,19 +12,20 @@ export interface HistoryListResponse {
 }
 
 export const historyApi = {
-  async getHistory(page = 1, limit = 10): Promise<HistoryListResponse> {
+  async getHistory(page = 1, limit = 10, subjectId?: number): Promise<HistoryListResponse> {
     if (isMock()) {
       await simulateMockLatency();
+      const papers = readMockState().papers.filter((paper) => subjectId === undefined || paper.subject_id === subjectId);
       return {
-        items: MOCK_PAPERS,
-        total: MOCK_PAPERS.length,
+        items: papers.slice((page - 1) * limit, page * limit),
+        total: papers.length,
         page,
         limit,
       };
     }
 
     const { data } = await apiClient.get<HistoryListResponse>('/papers', {
-      params: { page, limit },
+      params: { page, limit, ...(subjectId === undefined ? {} : { subject_id: subjectId }) },
     });
     return data;
   },

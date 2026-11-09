@@ -9,7 +9,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/Vite-7.x-646CFF.svg)](https://vitejs.dev/)
 
 </div>
 
@@ -30,11 +30,11 @@ BloomLens answers three foundational academic questions:
 
 - **Multi-Format Document Parsing**: High-fidelity structured text and layout extraction for digital PDFs (PyMuPDF), Word documents (`python-docx`), and scanned image PDFs with PaddleOCR fallback.
 - **Hierarchical Question Segmentation**: Automatically identifies main questions (`Q1`, `Q2`), sub-questions (`Q1(a)`, `Q1(b)`), marks allocations, and paper constraints (e.g., choice rules such as *"Answer any 4 questions"*).
-- **Hybrid Bloom Classifier**: 5-stage classification engine combining action verb analysis, cognitive operation hierarchy, SentenceTransformers semantic embeddings (`all-MiniLM-L6-v2`), structure analysis, and Google Gemini LLM fallback verification (`google-genai`).
-- **Duplicate & Similarity Search**: FAISS vector indexing combined with text normalization to identify repeated or closely related historical questions across terms and subjects.
-- **Explainable AI (XAI)**: Full transparency into classification rationale, including verb detection, component weights, semantic similarity metrics, and LLM reasoning.
-- **Interactive Analytics Engine**: Single-query aggregation for cognitive distribution (count & marks-weighted), topic frequency, and longitudinal multi-year cognitive trends.
-- **Human-in-the-Loop Review Workflow**: Reviewers can override Bloom levels, question text, topics, or marks while maintaining original AI predictions for academic auditability.
+- **Hybrid Bloom Classifier**: Weighted heuristic classifier combining leading action verbs, cognitive operations, semantic embeddings, and question structure, with optional bounded Google Gemini verification. Scores are uncalibrated, not probabilities.
+- **Duplicate & Similarity Search**: One index per upload, with FAISS when available and NumPy fallback. Normalized exact matches and near duplicates are distinct; comparisons default to the same subject and reject incompatible embedding versions. A versioned hashing fallback is exposed when the semantic model is unavailable.
+- **Explainable AI (XAI)**: Heuristic explanations expose detected verbs, component scores, and optional model output. These describe classifier signals; they do not establish causal explanations or independently validated correctness.
+- **Interactive Analytics Engine**: Leaf-question aggregation for count and marks distributions, topics, and exam-date trends, with subject filters and explicit unknown levels. Optional choices are reported as uncertain rather than selecting an arbitrary question subset.
+- **Human-in-the-Loop Review Workflow**: Reviewers can override Bloom levels, question text, topics, or marks with actor-attributed immutable revision history. Text edits mark analysis stale until re-analysis.
 - **Modern Responsive Web UI**: React 18, TypeScript, Tailwind CSS, Lucide icons, and React Query with offline mock mode support.
 
 ---
@@ -108,6 +108,9 @@ cp .env.example .env
 # Run database migrations (seeds L1–L6 Bloom levels)
 alembic upgrade head
 
+# Provision a reviewer (password is prompted; no public registration)
+python -m app.manage_reviewers reviewer --role admin
+
 # Start the FastAPI server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -120,8 +123,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```bash
 cd frontend
 
-# Install dependencies
-npm install
+# Install locked dependencies (Node 20.19+ or Node 22.12+)
+npm ci
 
 # Configure environment variables
 cp .env.example .env
@@ -133,6 +136,33 @@ npm run dev
 - **Web Application**: [http://localhost:5173](http://localhost:5173) (or [http://localhost:3000](http://localhost:3000))
 
 ---
+
+## Processing, authentication, and measured limits
+
+Uploads return `202` after committing `UPLOADED`; the UI polls extraction and
+analysis stages until a terminal status. The initial worker uses in-process
+BackgroundTasks and is not durable. Restarted interrupted jobs are marked failed;
+a durable external queue is future work. Stored uploads are removed after
+extraction by default. Size/rate limits and same-subject content hashes guard
+admission and concurrent duplicates.
+
+Browser requests use same-origin HttpOnly reviewer sessions and CSRF protection
+through the backend deployment; service credentials remain server-side. Set up
+HTTPS and secure cookies for production. Mock mode is enabled only by the literal
+`VITE_USE_MOCK_API=true` and uses isolated copies of fixtures.
+
+The internally authored 150-question evaluation across three subjects measured
+**98.67% (148/150) before classifier changes** and **100% (150/150) afterward**
+using deterministic offline embeddings. This is a templated engineering regression
+set, not independent validation or a production accuracy estimate. See the
+[evaluation protocol](backend/tests/data/EVALUATION.md).
+
+Google verification, when enabled, transmits question text to Google. Disable it
+for documents that must remain local. Automated CO mapping remains V2; supplied
+mappings are honored. Container/MySQL runtime and remote CI verification remain
+outstanding because Docker is unavailable in this workspace. See the
+[remediation status](spec/remediation-status.md) and
+[dependency audit and verification limits](spec/dependency-audit.md).
 
 ## Verification & Testing
 

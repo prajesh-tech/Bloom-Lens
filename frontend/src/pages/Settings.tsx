@@ -3,10 +3,11 @@ import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { BLOOM_CONFIG } from '../config/bloomConfig';
 import { Settings as SettingsIcon, Server, Shield, Layers } from 'lucide-react';
+import { isMock as isMockMode } from '../services/mockMode';
 
 export const Settings: React.FC = () => {
-  const isMock = import.meta.env.VITE_USE_MOCK_API !== 'false';
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const isMock = isMockMode();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'Same origin (/api/v1)';
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in">
@@ -37,7 +38,7 @@ export const Settings: React.FC = () => {
             </Badge>
           ) : (
             <Badge variant="success" className="font-mono">
-              ● FastAPI Backend Connected
+              Real API mode
             </Badge>
           )}
         </div>

@@ -7,6 +7,7 @@ import { QuestionFilterBar } from '../components/analysis/QuestionFilterBar';
 import { QuestionTable } from '../components/analysis/QuestionTable';
 import { QuestionDrawer } from '../components/analysis/QuestionDrawer';
 import { SimilarQuestions } from '../components/analysis/SimilarQuestions';
+import { QuestionRevisions } from '../components/analysis/QuestionRevisions';
 import { BloomDonutChart } from '../components/charts/BloomDonutChart';
 import { BloomBarChart } from '../components/charts/BloomBarChart';
 import { Card } from '../components/common/Card';
@@ -150,7 +151,7 @@ export const AnalysisResults: React.FC = () => {
         isOpen={selectedQuestion !== null}
         onClose={() => setSelectedQuestion(null)}
         onSaveOverride={handleSaveOverride}
-        relatedContent={selectedQuestion ? <SimilarQuestions questionId={selectedQuestion.id} /> : null}
+        relatedContent={selectedQuestion ? <><SimilarQuestions questionId={selectedQuestion.id} /><QuestionRevisions questionId={selectedQuestion.id} /></> : null}
       />
     </div>
   );

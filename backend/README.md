@@ -86,7 +86,7 @@ source .venv/bin/activate
 
 Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock
 ```
 
 ### 3. Environment Variables
@@ -105,10 +105,10 @@ GEMINI_API_KEY=your_google_gemini_api_key
 AUTH_ENABLED=false
 
 UPLOAD_DIR=uploads
-BLOOM_VERIFICATION_THRESHOLD=0.80
+BLOOM_VERIFICATION_THRESHOLD=0.60
 ```
 
-The example disables authentication for local development. In deployed environments, keep `API_KEY` server-side and enable authentication only for trusted server integrations; never configure the key as a frontend `VITE_` variable.
+The example disables authentication for local development. For reviewer login, enable auth and provision an account with `python -m app.manage_reviewers reviewer --role admin`. Local HTTP requires `SESSION_COOKIE_SECURE=false`; staging/production require HTTPS, auth, and secure cookies. Browser requests use same-origin sessions and CSRF protection through the backend deployment. Keep `API_KEY` server-side for trusted integrations; never configure it as a frontend `VITE_` variable. See [security and processing details](../CONTRIBUTING.md).
 
 ### 4. Database Migrations
 Run Alembic migrations to create tables and seed Bloom taxonomy levels (L1–L6):
@@ -170,7 +170,7 @@ The test suite covers:
 - Question-count and marks-weighted Bloom distributions
 - Historical cognitive level trends
 - Human-in-the-loop overrides & review workflows
-- API key authentication & secure role-based authorization hook
+- Administrator-provisioned reviewer accounts, revocable cookie sessions, CSRF checks, API keys for trusted server integrations, and immutable revision history
 
 ### Excluded (Reserved for V2)
 - Automated Course Outcome mapping and analytics (course and outcome CRUD foundations are implemented)

@@ -32,6 +32,15 @@ def test_or_does_not_leak_and_continuations_do_not_split():
     assert [(q['question_number'], q['choice_group']) for q in questions] == [('Q1', 'Q1_OR_GROUP'), ('Q2', 'Q1_OR_GROUP'), ('Q3', None)]
 
 
+def test_inline_marks_do_not_complete_a_numbered_question():
+    text = 'Q1. Explain [5 Marks] how the schema changes.\nDescribe the dependencies.\nQ2. State a key. [2]'
+    assert [q['question_number'] for q in Extractor.extract_questions(text)] == ['Q1', 'Q2']
+
+
+def test_unmarked_equation_is_not_a_marks_allocation():
+    assert MarksService.extract_marks('Verify that 2 x 3 = 6')[0] is None
+
+
 @pytest.mark.parametrize('text,expected', [
     ('Find the inverse of a 3 x 3 matrix.', None),
     ('Evaluate 2+3 using stack.', None),

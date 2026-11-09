@@ -16,6 +16,15 @@ export default defineConfig({
     open: false,
     proxy: { '/api': 'http://localhost:8000' },
   },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      output: {
+        onlyExplicitManualChunks: true,
+        manualChunks: (id) => /node_modules\/(recharts|d3-[^/]+|victory-vendor)\//.test(id) ? 'recharts' : undefined,
+      },
+    },
+  },
   test: {
     maxWorkers: 2,
     globals: true,
