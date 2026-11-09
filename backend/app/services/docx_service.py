@@ -1,7 +1,9 @@
-from typing import Dict, Any, List
+from typing import Any
+
 import docx
-from docx.text.paragraph import Paragraph
 from docx.table import Table
+from docx.text.paragraph import Paragraph
+
 from app.core.logging import logger
 from app.utils.text_cleaner import clean_text
 
@@ -10,11 +12,11 @@ class DOCXService:
     """Service for extracting text from Microsoft Word DOCX question papers."""
 
     @staticmethod
-    def extract_text_from_docx(file_path: str) -> Dict[str, Any]:
+    def extract_text_from_docx(file_path: str) -> dict[str, Any]:
         """
         Extracts structured text from DOCX paragraphs and tables.
         """
-        paragraphs_text: List[str] = []
+        paragraphs_text: list[str] = []
 
         try:
             doc = docx.Document(file_path)
@@ -39,6 +41,6 @@ class DOCXService:
                 "page_count": None,
                 "extraction_method": "docx_python_docx"
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error extracting text from DOCX {file_path}: {e}")
-            raise RuntimeError(f"Failed to process DOCX file: {str(e)}")
+            raise RuntimeError(f"Failed to process DOCX file: {e!s}")

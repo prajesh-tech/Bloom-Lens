@@ -1,191 +1,118 @@
-# BloomLens V1 — Production Backend
+# BloomLens backend
 
-BloomLens is an AI-powered historical question-paper analysis system designed for higher education institutions. It analyzes historical examination question papers (PDF & DOCX) to answer:
+FastAPI API for document extraction, Bloom classification, similarity search,
+analytics, and reviewer sessions.
 
-> **What has been asked historically, how frequently has it been asked, and at what cognitive level has it been asked?**
+## First-time setup
 
----
-
-## Key Features
-
-- **Document Parsing & OCR**: Structured extraction for PDF (PyMuPDF), DOCX (`python-docx`), and scanned image PDFs using PaddleOCR fallback.
-- **Hierarchical Question Segmentation**: Detects main questions (`Q1`, `Q2`) and sub-questions (`Q1(a)`, `Q1(b)`), preserving parent-child relationships.
-- **Marks & Paper Validation**: Extracts question marks, detects optional question structures (`Answer 4 out of 5`), and validates paper maximum marks against extracted sums.
-- **Hybrid Bloom Classifier**: 5-stage classifier based on Revised Bloom's Taxonomy (L1 Remember to L6 Create) combining verb analysis, cognitive operation hierarchy, SentenceTransformers semantic similarity, structure analysis, weighted scoring, and Google Gemini LLM fallback verification (`google-genai`).
-- **Thread-Safe Model Loading**: Thread-safe lazy initialization using `threading.Lock` and double-checked locking for ML/OCR models.
-- **API Authentication & Role-Based Access**: FastAPI dependency-based authentication via `X-API-Key` or `Authorization: Bearer <token>` protecting write operations, human overrides, and analytics endpoints.
-- **Explainable AI Metadata**: Detailed component scores, detected verbs, cognitive operations, and confidence scores saved for every question.
-- **Similarity & Vector Search**: FAISS CPU vector index and text normalization to detect exact duplicate questions and semantically similar questions across historical years.
-- **Optimized Analytics Engine**: Single-query aggregated analytics for Question-Count Bloom distribution, marks-weighted Bloom distribution, topic frequency, historical cognitive trends, and question type breakdown without N+1 query overhead.
-- **Human-in-the-Loop Review**: Override question text, marks, topic, unit, Bloom level, and question type while preserving original AI predictions for research evaluation.
-- **REST APIs & OpenAPI**: Versioned `/api/v1/` endpoints ready for React frontend integration.
-
----
-
-## Tech Stack
-
-- **Language & Core Framework**: Python 3.12, FastAPI, Pydantic v2, Pydantic Settings
-- **Database**: SQLAlchemy 2.x, Alembic, MySQL 8 / SQLite (`aiosqlite`)
-- **Document Processing**: PyMuPDF (`fitz`), `python-docx`, PaddleOCR
-- **AI / NLP & Vectors**: Hugging Face `transformers`, `sentence-transformers` (`all-MiniLM-L6-v2`), `faiss-cpu`, Google GenAI SDK (`google-genai`)
-- **Testing**: Pytest, Pytest-Asyncio, HTTPX
-
----
-
-## Project Structure
-
-```text
-backend/
-├── app/
-│   ├── main.py                     # FastAPI application entrypoint
-│   ├── core/                       # Config, database, auth & logging
-│   │   ├── auth.py                 # API authentication & authorization
-│   │   ├── config.py               # Pydantic BaseSettings
-│   │   ├── database.py             # SQLAlchemy async engine & get_db
-│   │   ├── errors.py               # Structured error handling
-│   │   ├── logging.py              # Application logger
-│   │   └── metrics.py              # Request & processing metrics
-│   ├── api/routes/                 # Versioned REST API endpoints (/api/v1/)
-│   │   ├── health.py               # System & deep health check
-│   │   ├── papers.py               # Paper upload, processing, status & deletion
-│   │   ├── questions.py            # Search, filter, pagination & human review
-│   │   └── analytics.py            # Overview, Bloom metrics, topics & trends
-│   ├── models/                     # SQLAlchemy 2.x database models
-│   ├── schemas/                    # Pydantic v2 validation schemas
-│   ├── services/                   # Business & AI service logic
-│   │   ├── document_service.py     # PDF/DOCX/OCR abstraction
-│   │   ├── question_extraction_service.py # Parsing & paper validation
-│   │   ├── bloom_service.py        # Hybrid Bloom classifier & Gemini fallback
-│   │   ├── similarity_service.py   # FAISS vector similarity engine
-│   │   ├── topic_service.py        # Domain topic & unit classifier
-│   │   └── analytics_service.py    # Aggregated analytics engine
-│   └── utils/                      # Text cleaning & upload validation helpers
-├── alembic/                        # Alembic migrations & initial seed data
-├── tests/                          # Automated Pytest test suite
-├── uploads/                        # Stored question paper files
-├── .env.example                    # Environment variable template
-└── requirements.txt                # Python dependencies
-```
-
----
-
-## Setup & Installation
-
-### 1. Prerequisites
-- Python 3.12+
-- MySQL 8 (or SQLite for local development)
-
-### 2. Environment Setup
-Clone the repository and set up a virtual environment:
+Requires Python 3.12. From the repository root:
 
 ```bash
 cd backend
 python3.12 -m venv .venv
-source .venv/bin/activate
-```
-
-Install dependencies:
-```bash
-pip install --require-hashes -r requirements.lock
-```
-
-### 3. Environment Variables
-Copy `.env.example` to `.env`:
-
-```bash
+.venv/bin/python -m pip install --require-hashes -r requirements.lock
 cp .env.example .env
+.venv/bin/alembic upgrade head
 ```
 
-Configure your `.env` settings:
+Copy `.env.example` only if `.env` does not already exist. Keep credentials in
+`.env` and do not commit it.
+
+## Start the API
+
+Run from `backend/`:
+
+```bash
+.venv/bin/alembic upgrade head
+.venv/bin/python -m uvicorn app.main:app --port 8000 --reload
+```
+
+Wait for **`Application startup complete`** before opening the frontend. The
+reloader's “Uvicorn running” line alone does not confirm successful startup.
+Stop the server with `Ctrl+C`.
+
+- API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health check: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+- API prefix: `/api/v1`
+
+## Database and migrations
+
+**MySQL is not required locally.** The default `DATABASE_URL` uses SQLite and
+creates `bloomlens.db` in the backend directory.
+
+For MySQL, create the database and credentials first, then set `DATABASE_URL` in
+`.env` using `mysql+asyncmy://USER:PASSWORD@HOST:3306/DATABASE`. The application
+uses asyncmy; Alembic uses the synchronous PyMySQL driver.
+
+After pulling schema changes:
+
+1. Stop the backend and back up the existing database.
+2. Run `.venv/bin/alembic upgrade head` from `backend/`.
+3. Restart the backend.
+
+If startup reports an outdated schema or `no such column: error_message`, apply
+the migrations above. Do not delete the database to resolve a migration error.
+Migration rollback notes are in [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Reviewer login
+
+The supplied example configuration is for local development. To use reviewer
+accounts, set these values in `backend/.env` for **local HTTP only**:
+
 ```env
-DATABASE_URL=sqlite+aiosqlite:///./bloomlens.db
-# For MySQL 8: mysql+pymysql://user:password@localhost:3306/bloomlens
-
-GEMINI_API_KEY=your_google_gemini_api_key
-AUTH_ENABLED=false
-
-UPLOAD_DIR=uploads
-BLOOM_VERIFICATION_THRESHOLD=0.60
+AUTH_ENABLED=true
+SESSION_COOKIE_SECURE=false
 ```
 
-The example disables authentication for local development. For reviewer login, enable auth and provision an account with `python -m app.manage_reviewers reviewer --role admin`. Local HTTP requires `SESSION_COOKIE_SECURE=false`; staging/production require HTTPS, auth, and secure cookies. Browser requests use same-origin sessions and CSRF protection through the backend deployment. Keep `API_KEY` server-side for trusted integrations; never configure it as a frontend `VITE_` variable. See [security and processing details](../CONTRIBUTING.md).
-
-### 4. Database Migrations
-Run Alembic migrations to create tables and seed Bloom taxonomy levels (L1–L6):
+After migrations, provision an account from `backend/`:
 
 ```bash
-alembic upgrade head
+.venv/bin/python -m app.manage_reviewers reviewer --role admin
 ```
 
----
+The command prompts for a password of at least 12 characters. There is no public
+registration. Running it again for an existing username resets its password and
+revokes its sessions. Restart the backend after changing `.env`, then sign in
+through the frontend.
 
-## Running the Server
+Staging/production require authentication, HTTPS, secure cookies, and same-origin
+frontend/API routing. Startup also validates required service credentials.
+Shared `API_KEY` credentials belong on the server, never in frontend variables.
+See [authentication details](../CONTRIBUTING.md).
 
-Start the FastAPI development server:
+## Useful settings
+
+All settings are read from `backend/.env`; see [.env.example](.env.example).
+
+| Setting | Purpose |
+| --- | --- |
+| `DATABASE_URL` | SQLite or MySQL connection |
+| `GEMINI_API_KEY` | Optional Google verification in local development; question text is sent to Google when used |
+| `MAX_UPLOAD_SIZE_MB` | File size limit, default 20 MB |
+| `MAX_REQUEST_BODY_SIZE_MB` | Whole-request limit; must exceed the file limit |
+| `UPLOAD_RATE_LIMIT_PER_MINUTE` | Upload admission limit per principal |
+| `RETAIN_UPLOADED_FILES` | Keep source files after extraction; default false |
+| `OCR_DPI` | Rendering resolution for OCR |
+
+Uploads return `202`; processing updates can be read at
+`/api/v1/papers/{id}/status`. Background tasks run inside the API process and are
+not durable. Use one worker; interrupted jobs are marked failed on restart.
+
+## Tests
+
+Run from `backend/`:
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Access Interactive API Documentation:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
----
-
-## Running Tests
-
-Execute the automated test suite:
-
-```bash
-# Activate your virtual environment first
-source .venv/bin/activate
-pytest tests/ -v
-
-# Or run directly via the virtualenv binary:
 .venv/bin/pytest tests/ -v
 ```
 
-The test suite covers:
-- Document extraction (PDF, DOCX, OCR fallback)
-- Question hierarchy, marks extraction, and paper validation
-- Mandatory Bloom Classifier test cases (L1 Remember to L6 Create, compound questions, ambiguous cases)
-- FAISS duplicate question similarity search
-- Count-based and marks-weighted analytics metrics
-- REST API upload, search, pagination, and human override endpoints
-- Authentication enforcement (401 on unauthenticated access to write/analytics routes)
-- Transaction rollbacks and orphaned file cleanups on processing failure
-- Thread-safe lazy model initialization under concurrency
-- Gemini API timeout handling and graceful fallback
+To reproduce the internal classifier evaluation:
 
----
+```bash
+.venv/bin/python -m scripts.evaluate_bloom
+```
 
-## V1 / V2 Boundary & Scope
-
-### Implemented in V1
-- Historical question paper parsing & sub-question hierarchy
-- Marks normalization and paper mark validation
-- Hybrid Revised Bloom Taxonomy classification (L1–L6) with explainability
-- Duplicate & semantic repeated question detection
-- Question-count and marks-weighted Bloom distributions
-- Historical cognitive level trends
-- Human-in-the-loop overrides & review workflows
-- Administrator-provisioned reviewer accounts, revocable cookie sessions, CSRF checks, API keys for trusted server integrations, and immutable revision history
-
-### Excluded (Reserved for V2)
-- Automated Course Outcome mapping and analytics (course and outcome CRUD foundations are implemented)
-- CO-PO mapping matrices
-- Student attainment analytics
-- Student performance prediction
-- Automatic question paper generation or exam prediction
-
----
-
-## Documentation & Contribution Reference
-
-For guides on how to set up, run, and modify this project:
-- **System Design & Architecture**: [`design.md`](../design.md)
-- **Developer Contribution Guide**: [`CONTRIBUTING.md`](../CONTRIBUTING.md)
-- **Technical Specification**: [`spec/spec.md`](../spec/spec.md)
-- **Operational Tasks & Roadmap**: [`spec/plan.md`](../spec/plan.md) and [`spec/tasks.md`](../spec/tasks.md)
-- **Skills Matrix**: [`spec/skills.md`](../spec/skills.md)
+See the [evaluation protocol](tests/data/EVALUATION.md) for score interpretation,
+embedding fallbacks, Google transmission, and benchmark limitations.
+For containers and deployment verification limits, see the
+[operations report](../spec/dependency-audit.md).

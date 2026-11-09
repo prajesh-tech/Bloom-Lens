@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from contextlib import asynccontextmanager
 from app.core.config import settings
+from app.core.database import ensure_database_schema_current
 from app.core.errors import http_exception_handler, validation_exception_handler, unhandled_exception_handler
 from app.core.logging import logger
 from app.core.metrics import metrics
@@ -21,6 +22,7 @@ from app.services.embedding_service import get_embedding_model
 async def lifespan(app: FastAPI):
     """Preloads ML embedding models during application startup to prevent upload freezes."""
     settings.validate_runtime_config()
+    await ensure_database_schema_current()
     await fail_interrupted_jobs()
     if settings.WARMUP_EMBEDDING_ON_STARTUP:
         logger.info("Warming up ML SentenceTransformer embedding model on startup...")
