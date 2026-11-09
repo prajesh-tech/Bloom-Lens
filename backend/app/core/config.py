@@ -59,6 +59,8 @@ class Settings(BaseSettings):
 
     # OCR Settings
     OCR_LANG: str = "en"
+    OCR_DPI: int = 200
+    OCR_MIN_TEXT_CHARS: int = 50
 
     # Performance Estimation Parameters & Weights
     ESTIMATE_BLOOM_WEIGHT_L1: float = 0.10
@@ -122,6 +124,8 @@ class Settings(BaseSettings):
             missing.append("MAX_DOCX_UNCOMPRESSED_SIZE_MB")
         if self.MAX_DOCUMENT_PAGES <= 0:
             missing.append("MAX_DOCUMENT_PAGES")
+        if not 72 <= self.OCR_DPI <= 600 or self.OCR_MIN_TEXT_CHARS < 0:
+            missing.append("OCR_DPI/OCR_MIN_TEXT_CHARS")
         if self.MAX_EXTRACTED_QUESTIONS <= 0:
             missing.append("MAX_EXTRACTED_QUESTIONS")
         if self.MAX_PARALLEL_QUESTION_CLASSIFICATIONS <= 0:

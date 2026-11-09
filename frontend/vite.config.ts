@@ -17,6 +17,7 @@ export default defineConfig({
     proxy: { '/api': 'http://localhost:8000' },
   },
   test: {
+    maxWorkers: 2,
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setupTests.ts',

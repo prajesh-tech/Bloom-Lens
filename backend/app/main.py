@@ -62,12 +62,15 @@ async def add_process_time_header(request: Request, call_next):
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = f"{process_time:.4f}s"
     response.headers["X-Request-ID"] = request_id
-    metrics.record_request(request.url.path, process_time, response.status_code)
+    endpoint = getattr(request.scope.get("route"), "path", "__unmatched__")
+    if endpoint != '__unmatched__' and request.url.path.startswith(settings.API_V1_STR + '/') and not endpoint.startswith(settings.API_V1_STR + '/'):
+        endpoint = settings.API_V1_STR + endpoint
+    metrics.record_request(endpoint, process_time, response.status_code)
     logger.info(
         "request_completed",
         extra={
             "request_id": request_id,
-            "endpoint": request.url.path,
+            "endpoint": endpoint,
             "method": request.method,
             "status_code": response.status_code,
             "duration_ms": round(process_time * 1000, 2),

@@ -4,6 +4,33 @@ Thank you for your interest in contributing to **BloomLens**! We welcome contrib
 
 This document outlines the workflow, development environment setup, coding conventions, and verification steps required when contributing to this repository.
 
+Install reproducible backend dependencies with
+`pip install --require-hashes -r requirements.lock`. The lock targets the verified
+Python 3.12 CPU environment and includes the official PyTorch CPU index. The
+declared NumPy version matches the tested environment (2.3.5); SQLAlchemy's
+`asyncio` extra includes greenlet. Use `npm ci` for the frontend lock. Regenerate
+the backend lock with uv, preserving current pins unless deliberately upgrading:
+`uv pip compile requirements.txt --constraint requirements.lock --generate-hashes --emit-index-url --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match --output-file /tmp/bloomlens-new.lock`.
+Both indexes are trusted, and install-time hashes verify selected artifacts.
+
+Application logs are JSON, including request IDs, route templates, status codes,
+and durations. Known configured secret values are masked without discarding
+ordinary token-related messages. Metrics cap route labels at 100 plus overflow;
+unmatched routes share a label. OCR uses `OCR_DPI` (default 200) and evaluates each
+page against `OCR_MIN_TEXT_CHARS` (default 50), retaining better existing text.
+Images pass as pixel arrays rather than temporary filenames.
+
+For local containers, copy `compose.env.example` to root `.env`, supply database
+credentials and an encoded `mysql+asyncmy` URL using hostname `mysql`, then run
+`docker compose up --build`. The frontend is on port 8080 and proxies `/api`.
+Provision accounts with `docker compose exec backend python -m app.manage_reviewers alice`.
+The local Compose default uses HTTP and development mode. HTTPS deployments must
+set production/staging and secure cookies, supply required keys, and terminate
+TLS at the same origin. Frontend Nginx and backend body limits must agree when
+increasing the default 20 MB file limit. Containers use one backend worker because
+the initial background dispatcher is in-process. PR CI runs backend tests and
+frontend type-check, lint, tests, and build; remote results require a pushed PR.
+
 Configuration defaults: Bloom verification uses `BLOOM_VERIFICATION_THRESHOLD=0.60`
 and semantic similarity uses `SIMILARITY_THRESHOLD_SEMANTIC=0.70`. The example
 environment mirrors these code defaults; changing them locally changes analysis

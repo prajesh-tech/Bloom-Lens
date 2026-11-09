@@ -44,7 +44,7 @@ BloomLens answers three foundational academic questions:
 | Layer | Technologies |
 | --- | --- |
 | **Backend** | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 Async, Alembic |
-| **Database** | SQLite / aiosqlite (Local), MySQL 8 (Production) |
+| **Database** | SQLite / aiosqlite (Local), MySQL 8 / asyncmy (Production); PyMySQL for migrations |
 | **AI / NLP & OCR** | PyMuPDF, python-docx, PaddleOCR, SentenceTransformers, FAISS-CPU, Google Gemini SDK (`google-genai`) |
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, TanStack React Query, Lucide Icons, Sonner |
 | **Testing** | Pytest, Pytest-Asyncio, HTTPX, Vitest |
@@ -100,7 +100,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock
 
 # Configure environment variables
 cp .env.example .env

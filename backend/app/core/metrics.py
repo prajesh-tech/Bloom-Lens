@@ -6,7 +6,8 @@ from typing import Any, Dict
 class MetricsStore:
     """Small in-process metrics store for lightweight production visibility."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_endpoints: int = 100) -> None:
+        self.max_endpoints = max_endpoints
         self._lock = Lock()
         self.request_count = 0
         self.error_count = 0
@@ -18,6 +19,8 @@ class MetricsStore:
     def record_request(self, endpoint: str, duration: float, status_code: int) -> None:
         with self._lock:
             self.request_count += 1
+            if endpoint not in self.endpoint_usage and len(self.endpoint_usage) >= self.max_endpoints:
+                endpoint = "__other__"
             self.endpoint_usage[endpoint] += 1
             self.request_durations.append(duration)
             if status_code >= 500:
