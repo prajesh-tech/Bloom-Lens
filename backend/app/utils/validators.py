@@ -182,3 +182,91 @@ def safe_upload_path(upload_dir: str, filename: str) -> str:
     if os.path.commonpath([base_dir, path]) != base_dir:
         raise_api_error(status.HTTP_400_BAD_REQUEST, "UnsafeUploadPath", "Unsafe upload filename.")
     return path
+
+
+async def store_and_validate_upload(file: UploadFile, maximum_marks: float, examination_type: str) -> Tuple[str, str, str]:
+    """Copy bounded chunks on a worker thread; never read the entire upload into memory."""
+    import asyncio
+    return await asyncio.to_thread(_store_and_validate_upload, file, maximum_marks, examination_type)
+
+
+def _store_and_validate_upload(file: UploadFile, maximum_marks: float, examination_type: str) -> Tuple[str, str, str]:
+    import hashlib
+    import uuid
+    orig_filename, ext = validate_paper_upload(file, maximum_marks, examination_type)
+    file_path = safe_upload_path(settings.UPLOAD_DIR, f"{uuid.uuid4().hex}_{orig_filename}")
+    digest = hashlib.sha256()
+    size = 0
+    signature = b""
+    try:
+        with open(file_path, "xb") as destination:
+            while chunk := file.file.read(64 * 1024):
+                size += len(chunk)
+                if size > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+                    raise_api_error(413, "FileTooLarge", "Upload exceeds the file size limit.")
+                if not signature:
+                    signature = chunk[:8]
+                digest.update(chunk)
+                destination.write(chunk)
+        _validate_stored_upload(file_path, ext, signature)
+        return orig_filename, file_path, digest.hexdigest()
+    except Exception:
+        try:
+            os.remove(file_path)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def _validate_stored_upload(file_path: str, ext: str, signature: bytes) -> None:
+    if ext == ".pdf" and not signature.startswith(b"%PDF-"):
+        raise_api_error(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "InvalidFileSignature", "PDF content signature is invalid.")
+
+    if ext == ".pdf":
+        try:
+            import fitz
+            with fitz.open(file_path) as document:
+                if document.page_count > settings.MAX_DOCUMENT_PAGES:
+                    raise_api_error(
+                        getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
+                        "TooManyDocumentPages",
+                        f"PDF exceeds the maximum allowed page count of {settings.MAX_DOCUMENT_PAGES}.",
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            raise_api_error(
+                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                "InvalidPdf",
+                "Uploaded PDF could not be parsed.",
+            )
+
+    if ext == ".docx":
+        try:
+            with zipfile.ZipFile(file_path) as archive:
+                entries = archive.infolist()
+                names = {entry.filename for entry in entries}
+                if "[Content_Types].xml" not in names or "word/document.xml" not in names:
+                    raise zipfile.BadZipFile
+                expanded_size = sum(entry.file_size for entry in entries)
+                max_expanded_bytes = settings.MAX_DOCX_UNCOMPRESSED_SIZE_MB * 1024 * 1024
+                if expanded_size > max_expanded_bytes:
+                    raise_api_error(
+                        getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
+                        "DocxExpandedFileTooLarge",
+                        "DOCX expands beyond the maximum allowed uncompressed size.",
+                    )
+        except HTTPException:
+            raise
+        except zipfile.BadZipFile:
+            raise_api_error(
+                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                "InvalidFileSignature",
+                "DOCX content signature is invalid.",
+            )
+        except Exception:
+            raise_api_error(
+                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                "InvalidDocx",
+                "Uploaded DOCX could not be parsed.",
+            )

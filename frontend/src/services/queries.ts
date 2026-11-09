@@ -9,6 +9,15 @@ export function useExamTypesQuery() {
   return useQuery({ queryKey: ['papers', 'exam-types'], queryFn: () => analysisApi.getExamTypes() });
 }
 
+export function usePaperStatusQuery(paperId?: number) {
+  return useQuery({
+    queryKey: ['papers', paperId, 'status'],
+    queryFn: () => analysisApi.getPaperStatus(paperId!),
+    enabled: paperId !== undefined,
+    refetchInterval: (query) => ['COMPLETED', 'REVIEW_REQUIRED', 'FAILED'].includes(query.state.data?.processing_status ?? '') ? false : 1000,
+  });
+}
+
 export function useDashboardQueries() {
   const overview = useQuery({
     queryKey: queryKeys.overview,

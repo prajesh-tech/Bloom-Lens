@@ -1,6 +1,6 @@
 import { apiClient } from './api';
 import { isMock } from './mockMode';
-import { PaperUploadPayload, QuestionPaper, PerformanceEstimate } from '../types/paper';
+import { PaperUploadPayload, QuestionPaper, PerformanceEstimate, PaperStatus } from '../types/paper';
 import { QuestionAnalysis, QuestionPatchPayload } from '../types/question';
 import { BloomAnalyticsData, TrendsAnalyticsData, OverviewAnalytics } from '../types/analytics';
 import { simulateMockLatency } from '../utils/latency';
@@ -14,6 +14,11 @@ import {
 } from './mockData';
 
 export const analysisApi = {
+  async getPaperStatus(paperId: number): Promise<PaperStatus> {
+    if (isMock()) return { paper_id: paperId, processing_status: 'COMPLETED', message: 'Done' };
+    const { data } = await apiClient.get<PaperStatus>(`/papers/${paperId}/status`);
+    return data;
+  },
   async getExamTypes(): Promise<string[]> {
     if (isMock()) return [...new Set(MOCK_PAPERS.map((paper) => paper.examination_type))];
     const { data } = await apiClient.get<string[]>('/papers/exam-types');
@@ -58,7 +63,6 @@ export const analysisApi = {
 
     const { data } = await apiClient.post<QuestionPaper>('/papers/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 10 * 60 * 1000,
     });
     return data;
   },

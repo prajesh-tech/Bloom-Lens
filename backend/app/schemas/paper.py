@@ -36,6 +36,8 @@ class PaperResponse(BaseModel):
     optional_question_flag: bool
     validation_metadata: Optional[Dict[str, Any]] = None
     total_questions: Optional[int] = 0
+    status_url: Optional[str] = None
+    error_message: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -48,6 +50,7 @@ class PaperStatusResponse(BaseModel):
     optional_question_flag: bool
     validation_metadata: Optional[Dict[str, Any]] = None
     message: str
+    error_message: Optional[str] = None
 
 
 class PaperListResponse(BaseModel):

@@ -14,6 +14,26 @@ The browser UI currently requires `AUTH_ENABLED=false`; until the planned sessio
 proxy is implemented, authenticated access is for trusted server clients only.
 Never put the shared API key in browser configuration.
 
+Uploads return HTTP 202 with the committed paper ID, `UPLOADED` status, and a
+`status_url`. Poll that endpoint for `PROCESSING`, `ANALYZING`, `COMPLETED`, or
+`FAILED`; failures include a safe `error_message`. Processing uses FastAPI
+BackgroundTasks through a dispatcher interface. This first implementation supports
+one application worker: tasks are not durable, and startup marks interrupted jobs
+failed. Replace the dispatcher with a durable queue before running multiple
+application workers. Delete failed papers before retrying identical files.
+
+`MAX_UPLOAD_SIZE_MB` bounds each file; `MAX_REQUEST_BODY_SIZE_MB` bounds the full
+multipart request, including chunked bodies, and must exceed the file limit.
+`UPLOAD_RATE_LIMIT_PER_MINUTE` defaults to ten per authenticated principal per
+process. Files are deleted after successful extraction unless
+`RETAIN_UPLOADED_FILES=true`; failed processing also removes the file. Database
+deletion commits before file cleanup, and cleanup failures are logged.
+
+Run `alembic upgrade head` before starting the new upload worker. Migration
+`upload_jobs_20261109` adds nullable hashes, subject/hash uniqueness, and failure
+details. Existing uploads are not retroactively hashed. Back up before rollback;
+`alembic downgrade c0a1b2c3d4e5` removes these fields and their uniqueness rule.
+
 ---
 
 ## Table of Contents

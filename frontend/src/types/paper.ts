@@ -32,6 +32,13 @@ export interface PaperUploadPayload {
   file: File;
 }
 
+export interface PaperStatus {
+  paper_id: number;
+  processing_status: QuestionPaper['processing_status'];
+  message: string;
+  error_message?: string | null;
+}
+
 export interface PerformanceEstimate {
   estimated_pass_percentage: number | null;
   estimated_average_marks: number | null;

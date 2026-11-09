@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # File Storage Settings
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 20
+    MAX_REQUEST_BODY_SIZE_MB: int = 21
+    UPLOAD_RATE_LIMIT_PER_MINUTE: int = 10
+    RETAIN_UPLOADED_FILES: bool = False
     MAX_DOCX_UNCOMPRESSED_SIZE_MB: int = 100
     MAX_DOCUMENT_PAGES: int = 100
     MAX_EXTRACTED_QUESTIONS: int = 500
@@ -104,6 +107,10 @@ class Settings(BaseSettings):
             missing.append("DATABASE_URL")
         if self.MAX_UPLOAD_SIZE_MB <= 0:
             missing.append("MAX_UPLOAD_SIZE_MB")
+        if self.MAX_REQUEST_BODY_SIZE_MB <= self.MAX_UPLOAD_SIZE_MB:
+            missing.append("MAX_REQUEST_BODY_SIZE_MB (must exceed MAX_UPLOAD_SIZE_MB)")
+        if self.UPLOAD_RATE_LIMIT_PER_MINUTE <= 0:
+            missing.append("UPLOAD_RATE_LIMIT_PER_MINUTE")
         if self.MAX_DOCX_UNCOMPRESSED_SIZE_MB <= 0:
             missing.append("MAX_DOCX_UNCOMPRESSED_SIZE_MB")
         if self.MAX_DOCUMENT_PAGES <= 0:

@@ -165,7 +165,7 @@ async def test_examination_type_validation(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_failed_upload_cleans_up_orphaned_file_and_rolls_back(client: AsyncClient, db_session: AsyncSession):
-    """When document processing fails, temporary file on disk is deleted and DB state is rolled back."""
+    """Accepted jobs retain failure status and clean up files when processing fails."""
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         import fitz
         doc = fitz.open()
@@ -190,11 +190,16 @@ async def test_failed_upload_cleans_up_orphaned_file_and_rolls_back(client: Asyn
                     },
                     files={"file": ("test.pdf", f, "application/pdf")},
                 )
-        assert res.status_code == 500
+        assert res.status_code == 202
+        failed = await client.get(res.json()["status_url"])
+        assert failed.json()["processing_status"] == "FAILED"
+        assert failed.json()["error_message"]
+        record = await db_session.get(QuestionPaper, res.json()["id"])
+        assert not os.path.exists(record.stored_file_path)
 
-        # Verify no QuestionPaper record was committed
+        # Accepted jobs retain their durable failure record
         final_papers = (await db_session.execute(select(func.count(QuestionPaper.id)))).scalar() or 0
-        assert final_papers == initial_papers
+        assert final_papers == initial_papers + 1
     finally:
         if os.path.exists(pdf_path):
             os.remove(pdf_path)

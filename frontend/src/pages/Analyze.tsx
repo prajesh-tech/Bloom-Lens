@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Dropzone } from '../components/upload/Dropzone';
 import { FilePreview } from '../components/upload/FilePreview';
@@ -7,7 +8,7 @@ import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
 import { toast } from '../components/common/Toast';
 import { Sparkles, AlertCircle } from 'lucide-react';
-import { useUploadPaperMutation } from '../services/queries';
+import { useUploadPaperMutation, usePaperStatusQuery } from '../services/queries';
 
 export const Analyze: React.FC = () => {
   const navigate = useNavigate();
@@ -19,8 +20,27 @@ export const Analyze: React.FC = () => {
   const [maxMarks, setMaxMarks] = useState<number>(100);
   const [yearDate, setYearDate] = useState('');
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [pendingPaperId, setPendingPaperId] = useState<number>();
+  const paperStatus = usePaperStatusQuery(pendingPaperId);
+  const queryClient = useQueryClient();
+  const isProcessing = uploadPaper.isPending || pendingPaperId !== undefined;
+  const currentStep = paperStatus.data?.processing_status === 'ANALYZING' ? 3
+    : paperStatus.data?.processing_status === 'PROCESSING' ? 2 : 1;
+
+  useEffect(() => {
+    if (pendingPaperId === undefined) return;
+    const status = paperStatus.data;
+    if (status?.processing_status === 'COMPLETED' || status?.processing_status === 'REVIEW_REQUIRED') {
+      queryClient.invalidateQueries({ queryKey: ['papers'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      setPendingPaperId(undefined);
+      toast.success('Question paper analyzed successfully!');
+      navigate(`/analysis/${pendingPaperId}`);
+    } else if (status?.processing_status === 'FAILED') {
+      toast.error(status.error_message || status.message);
+      setPendingPaperId(undefined);
+    }
+  }, [paperStatus.data, pendingPaperId, queryClient, navigate]);
 
   const handleStartAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,15 +58,7 @@ export const Analyze: React.FC = () => {
       return;
     }
 
-    setIsProcessing(true);
-    setCurrentStep(1); // Uploading
-
     try {
-      // Step simulation timeline
-      setTimeout(() => setCurrentStep(2), 600); // Extracting
-      setTimeout(() => setCurrentStep(3), 1400); // Analyzing
-      setTimeout(() => setCurrentStep(4), 2100); // Generating
-
       const paper = await uploadPaper.mutateAsync({
         subject_code: subjectCode.trim(),
         subject_name: subjectName.trim(),
@@ -56,11 +68,9 @@ export const Analyze: React.FC = () => {
         file: selectedFile,
       });
 
-      toast.success('Question paper analyzed successfully!');
-      navigate(`/analysis/${paper.id}`);
-    } catch (err: any) {
-      toast.error(err.message || 'Unable to analyze the document. Please try again.');
-      setIsProcessing(false);
+      setPendingPaperId(paper.id);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Unable to upload the document. Please try again.');
     }
   };
 
@@ -77,7 +87,12 @@ export const Analyze: React.FC = () => {
       </div>
 
       {isProcessing ? (
-        <ProcessingProgress currentStep={currentStep} />
+        <div>
+          <ProcessingProgress currentStep={currentStep} />
+          {paperStatus.isError && <div role="alert">Unable to check progress.
+            <Button onClick={() => paperStatus.refetch()}>Retry status check</Button>
+          </div>}
+        </div>
       ) : (
         <form onSubmit={handleStartAnalysis} className="space-y-6">
           {!selectedFile ? (

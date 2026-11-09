@@ -23,8 +23,12 @@ TestAsyncSessionLocal = async_sessionmaker(
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def setup_test_db():
+async def setup_test_db(monkeypatch):
     """Initializes in-memory SQLite database tables and seeds Bloom levels L1 - L6 for each test."""
+    from app.services import paper_processing_service
+    from app.core.upload_limits import upload_limiter
+    monkeypatch.setattr(paper_processing_service, "AsyncSessionLocal", TestAsyncSessionLocal)
+    upload_limiter.entries.clear()
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

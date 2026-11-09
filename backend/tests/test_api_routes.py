@@ -35,12 +35,14 @@ async def test_paper_upload_api(client: AsyncClient):
                 files={"file": ("test_paper.pdf", f, "application/pdf")},
             )
 
-        assert response.status_code == 201
+        assert response.status_code == 202
         data = response.json()
         assert data["subject_code"] == "CS301"
         assert data["examination_type"] == "Mid-Term"
         assert data["maximum_marks"] == 10.0
-        assert data["processing_status"] == "COMPLETED"
+        assert data["processing_status"] == "UPLOADED"
+        result = await client.get(data["status_url"])
+        assert result.json()["processing_status"] == "COMPLETED"
     finally:
         if os.path.exists(pdf_path):
             os.remove(pdf_path)

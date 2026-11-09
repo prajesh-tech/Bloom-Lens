@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 from typing import List, Optional
-from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, Integer, JSON
+from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, Integer, JSON, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
 class QuestionPaper(Base):
     __tablename__ = "question_papers"
+    __table_args__ = (UniqueConstraint('subject_id', 'file_hash', name='uq_paper_subject_hash'),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     subject_id: Mapped[int] = mapped_column(
@@ -19,6 +20,8 @@ class QuestionPaper(Base):
     maximum_marks: Mapped[float] = mapped_column(Float, nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     stored_file_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    file_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     upload_timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
