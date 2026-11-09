@@ -5,6 +5,10 @@ import { queryKeys } from './queryKeys';
 import { PaperUploadPayload } from '../types/paper';
 import { QuestionPatchPayload } from '../types/question';
 
+export function useExamTypesQuery() {
+  return useQuery({ queryKey: ['papers', 'exam-types'], queryFn: () => analysisApi.getExamTypes() });
+}
+
 export function useDashboardQueries() {
   const overview = useQuery({
     queryKey: queryKeys.overview,

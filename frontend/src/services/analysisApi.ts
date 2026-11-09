@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { isMock } from './mockMode';
 import { PaperUploadPayload, QuestionPaper, PerformanceEstimate } from '../types/paper';
 import { QuestionAnalysis, QuestionPatchPayload } from '../types/question';
 import { BloomAnalyticsData, TrendsAnalyticsData, OverviewAnalytics } from '../types/analytics';
@@ -12,9 +13,13 @@ import {
   MOCK_PERFORMANCE_ESTIMATES,
 } from './mockData';
 
-const isMock = () => import.meta.env.VITE_USE_MOCK_API === 'true';
-
 export const analysisApi = {
+  async getExamTypes(): Promise<string[]> {
+    if (isMock()) return [...new Set(MOCK_PAPERS.map((paper) => paper.examination_type))];
+    const { data } = await apiClient.get<string[]>('/papers/exam-types');
+    return data;
+  },
+
   async uploadQuestionPaper(payload: PaperUploadPayload): Promise<QuestionPaper> {
     if (isMock()) {
       await simulateMockLatency();

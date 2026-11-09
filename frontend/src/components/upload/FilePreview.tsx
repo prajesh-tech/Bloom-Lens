@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { formatFileSize } from '../../utils/formatters';
-import { SUPPORTED_EXAM_TYPES } from '../../config/constants';
+import { useExamTypesQuery } from '../../services/queries';
 
 interface FilePreviewProps {
   file: File;
@@ -32,6 +32,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
   setYearDate,
   onRemove,
 }) => {
+  const examTypes = useExamTypesQuery();
   const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
 
   return (
@@ -92,16 +93,19 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
             Examination Type <span className="text-rose-500">*</span>
           </label>
           <select
+            required
+            disabled={examTypes.isPending || examTypes.isError}
             value={examType}
             onChange={(e) => setExamType(e.target.value)}
             className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
           >
-            {SUPPORTED_EXAM_TYPES.map((type) => (
+            {(examTypes.data ?? []).map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>
             ))}
           </select>
+          {examTypes.isError && <p role="alert">Unable to load examination types. Please retry.</p>}
         </div>
 
         <div>

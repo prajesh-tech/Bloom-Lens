@@ -1,9 +1,8 @@
 import { apiClient } from './api';
+import { isMock } from './mockMode';
 import { QuestionPaper } from '../types/paper';
 import { simulateMockLatency } from '../utils/latency';
 import { MOCK_PAPERS } from './mockData';
-
-const isMock = () => import.meta.env.VITE_USE_MOCK_API !== 'false';
 
 export interface HistoryListResponse {
   items: QuestionPaper[];

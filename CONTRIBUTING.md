@@ -4,6 +4,16 @@ Thank you for your interest in contributing to **BloomLens**! We welcome contrib
 
 This document outlines the workflow, development environment setup, coding conventions, and verification steps required when contributing to this repository.
 
+Configuration defaults: Bloom verification uses `BLOOM_VERIFICATION_THRESHOLD=0.60`
+and semantic similarity uses `SIMILARITY_THRESHOLD_SEMANTIC=0.70`. The example
+environment mirrors these code defaults; changing them locally changes analysis
+behavior. Only `VITE_USE_MOCK_API=true` enables the standalone demo. An unset or
+false value uses the real backend. Examination types come from authenticated
+`GET /api/v1/papers/exam-types`, the same list used by upload validation.
+The browser UI currently requires `AUTH_ENABLED=false`; until the planned session
+proxy is implemented, authenticated access is for trusted server clients only.
+Never put the shared API key in browser configuration.
+
 ---
 
 ## Table of Contents

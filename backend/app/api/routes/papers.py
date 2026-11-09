@@ -36,6 +36,12 @@ from app.utils.text_cleaner import extract_year_from_text, normalize_question_te
 router = APIRouter(prefix="/papers", tags=["Question Papers"])
 
 
+@router.get("/exam-types", response_model=List[str])
+async def get_exam_types(current_user: AuthenticatedUser = Depends(get_current_user)):
+    """Canonical examination types accepted by upload validation."""
+    return SUPPORTED_EXAM_TYPES
+
+
 @router.post("/upload", response_model=PaperResponse, status_code=status.HTTP_201_CREATED)
 async def upload_question_paper(
     subject_code: str = Form(..., description="Subject code e.g. CS301"),

@@ -54,7 +54,7 @@ export const MOCK_PAPERS: QuestionPaper[] = [
     subject_id: 3,
     subject_code: 'CS304',
     subject_name: 'Operating Systems',
-    examination_type: 'Internal Test',
+    examination_type: 'Internal',
     maximum_marks: 30,
     original_filename: 'OS_Internal2_2024.pdf',
     upload_timestamp: '2024-03-10T09:00:00Z',
